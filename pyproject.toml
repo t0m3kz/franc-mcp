@@ -1,0 +1,46 @@
+[project]
+name = "franc-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.10.5",
+    "infrahub-sdk[all]>=1.13.3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-httpx>=0.35.0",
+    "ruff>=0.11.8",
+    "mypy>=1.15.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[tool.hatch.build.targets.wheel]
+      packages = ["franc"]
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120
+
+exclude = [
+    ".git",
+    ".venv",
+    "env",
+    "_build",
+    "build",
+    "dist",
+    "examples",
+]
+
+
+[tool.ruff.lint]
+preview = true

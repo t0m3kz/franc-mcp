@@ -1,0 +1,796 @@
+{
+  "data": {
+    "DcimPhysicalDevice": {
+      "count": 1,
+      "edges": [
+        {
+          "node": {
+            "id": "1856ac3a-c229-be0b-35f6-c51e674ed24c",
+            "hfid": [
+              "ktw-1-leaf-01"
+            ],
+            "display_label": "ktw-1-leaf-01",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "leaf"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-leaf-01"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-52e6-f38c-35fd-c51901b79ca4",
+                "hfid": [
+                  "CCS-720DP-48S-2F_LEAF"
+                ],
+                "display_label": "CCS-720DP-48S-2F_LEAF",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "profiles": {
+              "count": 0,
+              "edges": []
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd4-e79c-485f-35ff-c51774721afa",
+                "hfid": [
+                  "CCS-720DP-48S-2F"
+                ],
+                "display_label": "CCS-720DP-48S-2F",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "artifacts": {
+              "count": 0,
+              "edges": []
+            },
+            "subscriber_of_groups": {
+              "count": 0,
+              "edges": []
+            },
+            "member_of_groups": {
+              "count": 3,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856abd3-2fac-39f5-35f9-c513c6d57c21",
+                    "hfid": [
+                      "arista_leaf"
+                    ],
+                    "display_label": "arista_leaf",
+                    "__typename": "CoreStandardGroup"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-9a1a-bec8-35fa-c519831191a4",
+                    "hfid": [
+                      "create_dc-a6b020a364cc64b258db74db5dfb64b4"
+                    ],
+                    "display_label": "create_dc-a6b020a364cc64b258db74db5dfb64b4",
+                    "__typename": "CoreGeneratorGroup"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac51-809a-8bd6-35f5-c51c8ff00d10",
+                    "hfid": [
+                      "topology_cabling__a6b020a364cc64b258db74db5dfb64b4"
+                    ],
+                    "display_label": "topology_cabling__a6b020a364cc64b258db74db5dfb64b4",
+                    "__typename": "CoreGraphQLQueryGroup"
+                  }
+                }
+              ]
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-804e-512d-35fd-c514a749aa3f",
+                "hfid": [
+                  "Arista EOS"
+                ],
+                "display_label": "Arista EOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-2290-ee52-35f7-c51778b19043",
+                "hfid": [
+                  "172.20.2.9/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.9/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 3,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3d-b636-3c1f-35f9-c517e3dd3345",
+                    "hfid": [
+                      "KTW-1-LEAF-01-OSPF"
+                    ],
+                    "display_label": "ktw-1-leaf-01 OSPF UNDERLAY",
+                    "__typename": "ServiceOSPF"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-4624-da89-35f3-c51d31de83e9",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-01 -> ktw-1-spine-01 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-462f-c2b3-35fd-c5100447734e",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-01 -> ktw-1-spine-02 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                }
+              ]
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            },
+            "interfaces": {
+              "count": 55,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3a-cec7-f86a-35f1-c5127c1461c4",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Console"
+                    ],
+                    "display_label": "Console",
+                    "__typename": "DcimConsoleInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-01ac-a84c-35f0-c5174cf51125",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet1"
+                    ],
+                    "display_label": "Ethernet1",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-ed6a-2018-35f0-c511eaf60b20",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet10"
+                    ],
+                    "display_label": "Ethernet10",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-cfdf-12fd-35fd-c51f15546752",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet11"
+                    ],
+                    "display_label": "Ethernet11",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-da58-365e-35f3-c517749bae63",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet12"
+                    ],
+                    "display_label": "Ethernet12",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f346-3edf-35f3-c514dc6195fe",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet13"
+                    ],
+                    "display_label": "Ethernet13",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-ee90-fe00-35fc-c51dc2d8e88a",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet14"
+                    ],
+                    "display_label": "Ethernet14",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-efa7-d584-35fb-c516709e07bb",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet15"
+                    ],
+                    "display_label": "Ethernet15",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-cc58-894c-35f6-c511c2788ac8",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet16"
+                    ],
+                    "display_label": "Ethernet16",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-02b5-2e9a-35f3-c513541a9dd5",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet17"
+                    ],
+                    "display_label": "Ethernet17",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-ff83-1b0d-35f4-c51b6b34ac85",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet18"
+                    ],
+                    "display_label": "Ethernet18",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-fac4-1c31-35fc-c514df107228",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet19"
+                    ],
+                    "display_label": "Ethernet19",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d93b-135a-35f8-c518cb811967",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet2"
+                    ],
+                    "display_label": "Ethernet2",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-dce7-21ba-35f4-c51450852f48",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet20"
+                    ],
+                    "display_label": "Ethernet20",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-dde6-670c-35f2-c515471a58fc",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet21"
+                    ],
+                    "display_label": "Ethernet21",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-fd40-432c-35f5-c51d0ab88a8d",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet22"
+                    ],
+                    "display_label": "Ethernet22",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-0447-362e-35fa-c513483e0015",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet23"
+                    ],
+                    "display_label": "Ethernet23",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f988-2c11-35fa-c511c18f2ec4",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet24"
+                    ],
+                    "display_label": "Ethernet24",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f49c-6aad-35fe-c51063579726",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet25"
+                    ],
+                    "display_label": "Ethernet25",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f5eb-cc5b-35f2-c51d0c29cb9f",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet26"
+                    ],
+                    "display_label": "Ethernet26",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-05b0-b473-35fa-c5177be27a50",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet27"
+                    ],
+                    "display_label": "Ethernet27",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e19f-b3e4-35fe-c51df8cea5ba",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet28"
+                    ],
+                    "display_label": "Ethernet28",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-0704-58f4-35f0-c51dd554c1e0",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet29"
+                    ],
+                    "display_label": "Ethernet29",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f202-19aa-35f1-c51aa99cc4ba",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet3"
+                    ],
+                    "display_label": "Ethernet3",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-00a7-fcfa-35ff-c519d4ae2d0f",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet30"
+                    ],
+                    "display_label": "Ethernet30",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e31b-13d0-35f9-c511b1ac4a00",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet31"
+                    ],
+                    "display_label": "Ethernet31",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-cd93-5c98-35f5-c5192ab5edde",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet32"
+                    ],
+                    "display_label": "Ethernet32",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-085a-3e1f-35fc-c51e712336b0",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet33"
+                    ],
+                    "display_label": "Ethernet33",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-fbf0-06be-35f4-c5102233c057",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet34"
+                    ],
+                    "display_label": "Ethernet34",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f85c-fdaa-35f3-c511f9daf4f0",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet35"
+                    ],
+                    "display_label": "Ethernet35",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d0f8-da22-35f1-c5163ad45810",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet36"
+                    ],
+                    "display_label": "Ethernet36",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-c8c8-2d1e-35f1-c5166a0947ca",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet37"
+                    ],
+                    "display_label": "Ethernet37",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e996-e43b-35ff-c51b7ffea5a7",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet38"
+                    ],
+                    "display_label": "Ethernet38",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e708-b6a6-35fc-c51a9c474cc5",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet39"
+                    ],
+                    "display_label": "Ethernet39",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e499-d06a-35f8-c51519f0e511",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet4"
+                    ],
+                    "display_label": "Ethernet4",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d213-c78d-35fd-c5169b9ebbd0",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet40"
+                    ],
+                    "display_label": "Ethernet40",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-dbb6-579d-35fd-c5102c049beb",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet41"
+                    ],
+                    "display_label": "Ethernet41",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e5d8-3838-35f4-c5175b89d36d",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet42"
+                    ],
+                    "display_label": "Ethernet42",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d7ed-c39f-35f4-c51949f42838",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet43"
+                    ],
+                    "display_label": "Ethernet43",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f70f-638e-35fa-c51a7d7633b6",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet44"
+                    ],
+                    "display_label": "Ethernet44",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-df23-4986-35f7-c517b1e7edee",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet45"
+                    ],
+                    "display_label": "Ethernet45",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-f0b5-0ec8-35f6-c511098ae7e9",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet46"
+                    ],
+                    "display_label": "Ethernet46",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e852-67f2-35f4-c51750499b75",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet47"
+                    ],
+                    "display_label": "Ethernet47",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-eb0f-4827-35f7-c510b00d96d3",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet48"
+                    ],
+                    "display_label": "Ethernet48",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d463-746f-35f5-c51e332253bf",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet49"
+                    ],
+                    "display_label": "Ethernet49",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d6c3-7e22-35f1-c515c12786c4",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet5"
+                    ],
+                    "display_label": "Ethernet5",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-cb1b-4adc-35f1-c5100e690bb1",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet50"
+                    ],
+                    "display_label": "Ethernet50",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-e05d-a9bf-35f4-c51f8f6ff30f",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet51"
+                    ],
+                    "display_label": "Ethernet51",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3b-09c1-bb88-35f0-c5110f9ef540",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet52"
+                    ],
+                    "display_label": "Ethernet52",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d594-a1ac-35f1-c51e14eac509",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet6"
+                    ],
+                    "display_label": "Ethernet6",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-fe5a-8270-35fd-c519a7940b3a",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet7"
+                    ],
+                    "display_label": "Ethernet7",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-c9f2-5bfb-35fe-c5185395578d",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet8"
+                    ],
+                    "display_label": "Ethernet8",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-d33f-f42f-35f9-c516b42a6c04",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Ethernet9"
+                    ],
+                    "display_label": "Ethernet9",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3a-ec4a-090f-35f9-c51c8c91f97e",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "Management1"
+                    ],
+                    "display_label": "Management1",
+                    "__typename": "DcimPhysicalInterface"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3c-ec5a-5b4c-35fb-c5127fa5fa0d",
+                    "hfid": [
+                      "ktw-1-leaf-01",
+                      "loopback0"
+                    ],
+                    "display_label": "loopback0",
+                    "__typename": "DcimVirtualInterface"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

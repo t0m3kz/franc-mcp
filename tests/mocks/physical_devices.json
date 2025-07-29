@@ -1,0 +1,1439 @@
+{
+  "data": {
+    "DcimPhysicalDevice": {
+      "count": 12,
+      "edges": [
+        {
+          "node": {
+            "id": "1856ac3a-b49a-861f-35f3-c514d4ca1abb",
+            "hfid": [
+              "ktw-1-console-01"
+            ],
+            "display_label": "ktw-1-console-01",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "console"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-console-01"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd8-3b62-4c52-35fb-c5127efccdf2",
+                "hfid": [
+                  "SCG50R_CONSOLE"
+                ],
+                "display_label": "SCG50R_CONSOLE",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-708f-8e2f-35fb-c5103d794120",
+                "hfid": [
+                  "SCG50R"
+                ],
+                "display_label": "SCG50R",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-8a31-b27b-35ff-c518d7587053",
+                "hfid": [
+                  "Perle IOLAN"
+                ],
+                "display_label": "Perle IOLAN",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-17e7-b90c-35fa-c510381b671f",
+                "hfid": [
+                  "172.20.2.7/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.7/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 0,
+              "edges": []
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-c236-1a70-35f5-c51f66215592",
+            "hfid": [
+              "ktw-1-console-02"
+            ],
+            "display_label": "ktw-1-console-02",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "console"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-console-02"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd8-3b62-4c52-35fb-c5127efccdf2",
+                "hfid": [
+                  "SCG50R_CONSOLE"
+                ],
+                "display_label": "SCG50R_CONSOLE",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-708f-8e2f-35fb-c5103d794120",
+                "hfid": [
+                  "SCG50R"
+                ],
+                "display_label": "SCG50R",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-8a31-b27b-35ff-c518d7587053",
+                "hfid": [
+                  "Perle IOLAN"
+                ],
+                "display_label": "Perle IOLAN",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-1d05-6095-35f4-c5156c893aee",
+                "hfid": [
+                  "172.20.2.8/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.8/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 0,
+              "edges": []
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-5bc7-2aed-35ff-c5127a0ff27c",
+            "hfid": [
+              "ktw-1-dc_firewall-01"
+            ],
+            "display_label": "ktw-1-dc_firewall-01",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "dc_firewall"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-dc_firewall-01"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-ece9-8e4e-35fc-c510d6fbf239",
+                "hfid": [
+                  "SRX-1500_DC_FIREWALL"
+                ],
+                "display_label": "SRX-1500_DC_FIREWALL",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-68eb-435c-35f1-c51b04e8e38e",
+                "hfid": [
+                  "SRX-1500"
+                ],
+                "display_label": "SRX-1500",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-7e71-9449-35f6-c517e021a28d",
+                "hfid": [
+                  "Juniper JunOS"
+                ],
+                "display_label": "Juniper JunOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-0dd3-5274-35f9-c512b1a3d687",
+                "hfid": [
+                  "172.20.2.5/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.5/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 0,
+              "edges": []
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-98d6-f024-35f8-c5186de122ae",
+            "hfid": [
+              "ktw-1-dc_firewall-02"
+            ],
+            "display_label": "ktw-1-dc_firewall-02",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "dc_firewall"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-dc_firewall-02"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-ece9-8e4e-35fc-c510d6fbf239",
+                "hfid": [
+                  "SRX-1500_DC_FIREWALL"
+                ],
+                "display_label": "SRX-1500_DC_FIREWALL",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-68eb-435c-35f1-c51b04e8e38e",
+                "hfid": [
+                  "SRX-1500"
+                ],
+                "display_label": "SRX-1500",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-7e71-9449-35f6-c517e021a28d",
+                "hfid": [
+                  "Juniper JunOS"
+                ],
+                "display_label": "Juniper JunOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-1292-e695-35f7-c519e564e7f4",
+                "hfid": [
+                  "172.20.2.6/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.6/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 0,
+              "edges": []
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-c229-be0b-35f6-c51e674ed24c",
+            "hfid": [
+              "ktw-1-leaf-01"
+            ],
+            "display_label": "ktw-1-leaf-01",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "leaf"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-leaf-01"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-52e6-f38c-35fd-c51901b79ca4",
+                "hfid": [
+                  "CCS-720DP-48S-2F_LEAF"
+                ],
+                "display_label": "CCS-720DP-48S-2F_LEAF",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd4-e79c-485f-35ff-c51774721afa",
+                "hfid": [
+                  "CCS-720DP-48S-2F"
+                ],
+                "display_label": "CCS-720DP-48S-2F",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-804e-512d-35fd-c514a749aa3f",
+                "hfid": [
+                  "Arista EOS"
+                ],
+                "display_label": "Arista EOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-2290-ee52-35f7-c51778b19043",
+                "hfid": [
+                  "172.20.2.9/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.9/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 3,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3d-b636-3c1f-35f9-c517e3dd3345",
+                    "hfid": [
+                      "KTW-1-LEAF-01-OSPF"
+                    ],
+                    "display_label": "ktw-1-leaf-01 OSPF UNDERLAY",
+                    "__typename": "ServiceOSPF"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-4624-da89-35f3-c51d31de83e9",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-01 -> ktw-1-spine-01 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-462f-c2b3-35fd-c5100447734e",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-01 -> ktw-1-spine-02 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                }
+              ]
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-c223-aa36-35fe-c51e97d0a0e8",
+            "hfid": [
+              "ktw-1-leaf-02"
+            ],
+            "display_label": "ktw-1-leaf-02",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "leaf"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-leaf-02"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-52e6-f38c-35fd-c51901b79ca4",
+                "hfid": [
+                  "CCS-720DP-48S-2F_LEAF"
+                ],
+                "display_label": "CCS-720DP-48S-2F_LEAF",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd4-e79c-485f-35ff-c51774721afa",
+                "hfid": [
+                  "CCS-720DP-48S-2F"
+                ],
+                "display_label": "CCS-720DP-48S-2F",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-804e-512d-35fd-c514a749aa3f",
+                "hfid": [
+                  "Arista EOS"
+                ],
+                "display_label": "Arista EOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-2805-41ea-35f8-c51079f8901c",
+                "hfid": [
+                  "172.20.2.10/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.10/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 3,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3d-b58a-f6f2-35fe-c51384d88904",
+                    "hfid": [
+                      "KTW-1-LEAF-02-OSPF"
+                    ],
+                    "display_label": "ktw-1-leaf-02 OSPF UNDERLAY",
+                    "__typename": "ServiceOSPF"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-462a-9556-35f2-c51b2ee98fe8",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-02 -> ktw-1-spine-01 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-4646-6673-35fc-c51178f01045",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-02 -> ktw-1-spine-02 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                }
+              ]
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-c20f-6ed5-35f0-c51387530959",
+            "hfid": [
+              "ktw-1-leaf-03"
+            ],
+            "display_label": "ktw-1-leaf-03",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "leaf"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-leaf-03"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-52e6-f38c-35fd-c51901b79ca4",
+                "hfid": [
+                  "CCS-720DP-48S-2F_LEAF"
+                ],
+                "display_label": "CCS-720DP-48S-2F_LEAF",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd4-e79c-485f-35ff-c51774721afa",
+                "hfid": [
+                  "CCS-720DP-48S-2F"
+                ],
+                "display_label": "CCS-720DP-48S-2F",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-804e-512d-35fd-c514a749aa3f",
+                "hfid": [
+                  "Arista EOS"
+                ],
+                "display_label": "Arista EOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-2d6c-728b-35f9-c51a9ed89ff9",
+                "hfid": [
+                  "172.20.2.11/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.11/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 3,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3d-b59a-87d2-35f2-c5143c9fab41",
+                    "hfid": [
+                      "KTW-1-LEAF-03-OSPF"
+                    ],
+                    "display_label": "ktw-1-leaf-03 OSPF UNDERLAY",
+                    "__typename": "ServiceOSPF"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-461a-5bae-35f3-c51445d8f9c3",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-03 -> ktw-1-spine-01 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-6de9-e916-35f7-c51500c1fd3b",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-03 -> ktw-1-spine-02 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                }
+              ]
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-de0f-895a-35f6-c51de4fe0575",
+            "hfid": [
+              "ktw-1-leaf-04"
+            ],
+            "display_label": "ktw-1-leaf-04",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "leaf"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-leaf-04"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-52e6-f38c-35fd-c51901b79ca4",
+                "hfid": [
+                  "CCS-720DP-48S-2F_LEAF"
+                ],
+                "display_label": "CCS-720DP-48S-2F_LEAF",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd4-e79c-485f-35ff-c51774721afa",
+                "hfid": [
+                  "CCS-720DP-48S-2F"
+                ],
+                "display_label": "CCS-720DP-48S-2F",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-804e-512d-35fd-c514a749aa3f",
+                "hfid": [
+                  "Arista EOS"
+                ],
+                "display_label": "Arista EOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-346b-343d-35f3-c51bbc1153ce",
+                "hfid": [
+                  "172.20.2.12/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.12/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 3,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3d-ce56-4e18-35f9-c51e06d9c6a3",
+                    "hfid": [
+                      "KTW-1-LEAF-04-OSPF"
+                    ],
+                    "display_label": "ktw-1-leaf-04 OSPF UNDERLAY",
+                    "__typename": "ServiceOSPF"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-6dde-16df-35fa-c514efa407e7",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-04 -> ktw-1-spine-01 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-6dd1-7d1d-35fe-c51c952fcf5d",
+                    "hfid": null,
+                    "display_label": "ktw-1-leaf-04 -> ktw-1-spine-02 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                }
+              ]
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-3b9b-f20a-35f0-c51dbbcb0a1b",
+            "hfid": [
+              "ktw-1-oob-01"
+            ],
+            "display_label": "ktw-1-oob-01",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "oob"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-oob-01"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-fa53-bbcc-35fe-c5122422ad8c",
+                "hfid": [
+                  "C9200L-24P-4G_OOB"
+                ],
+                "display_label": "C9200L-24P-4G_OOB",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-6e35-6d61-35f1-c5111b3b4d03",
+                "hfid": [
+                  "C9200L-24P-4G"
+                ],
+                "display_label": "C9200L-24P-4G",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-6ce0-89e4-35f7-c51011db4ab6",
+                "hfid": [
+                  "Cisco IOS-XE"
+                ],
+                "display_label": "Cisco IOS-XE",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-023b-560a-35fe-c51572ad2340",
+                "hfid": [
+                  "172.20.2.3/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.3/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 0,
+              "edges": []
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-5bb9-575d-35f2-c51193e2dc08",
+            "hfid": [
+              "ktw-1-oob-02"
+            ],
+            "display_label": "ktw-1-oob-02",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "oob"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-oob-02"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-fa53-bbcc-35fe-c5122422ad8c",
+                "hfid": [
+                  "C9200L-24P-4G_OOB"
+                ],
+                "display_label": "C9200L-24P-4G_OOB",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-6e35-6d61-35f1-c5111b3b4d03",
+                "hfid": [
+                  "C9200L-24P-4G"
+                ],
+                "display_label": "C9200L-24P-4G",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-6ce0-89e4-35f7-c51011db4ab6",
+                "hfid": [
+                  "Cisco IOS-XE"
+                ],
+                "display_label": "Cisco IOS-XE",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac3a-0864-a35d-35f5-c5175861af77",
+                "hfid": [
+                  "172.20.2.4/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.4/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 0,
+              "edges": []
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-5b2e-8cfb-35fe-c516350fa6d5",
+            "hfid": [
+              "ktw-1-spine-01"
+            ],
+            "display_label": "ktw-1-spine-01",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "spine"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-spine-01"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-186e-91ec-35fc-c51dca34d4b2",
+                "hfid": [
+                  "DCS-7280DR3-24-F_SPINE"
+                ],
+                "display_label": "DCS-7280DR3-24-F_SPINE",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-0269-8ad9-35f5-c51cfb1d6de7",
+                "hfid": [
+                  "DCS-7280DR3-24-F"
+                ],
+                "display_label": "DCS-7280DR3-24-F",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-804e-512d-35fd-c514a749aa3f",
+                "hfid": [
+                  "Arista EOS"
+                ],
+                "display_label": "Arista EOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac39-c18e-5178-35fc-c518d78fb0db",
+                "hfid": [
+                  "172.20.2.1/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.1/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 5,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3d-b5a6-60df-35fa-c5153a55057d",
+                    "hfid": [
+                      "KTW-1-SPINE-01-OSPF"
+                    ],
+                    "display_label": "ktw-1-spine-01 OSPF UNDERLAY",
+                    "__typename": "ServiceOSPF"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-6e00-c01b-35fa-c514811bb801",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-01 -> ktw-1-leaf-01 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-6dcd-bec7-35ff-c51a7e083d63",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-01 -> ktw-1-leaf-02 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-75e0-9865-35f6-c51c558715e1",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-01 -> ktw-1-leaf-03 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-75ec-4991-35f5-c517d59ffd3f",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-01 -> ktw-1-leaf-04 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                }
+              ]
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "1856ac3a-5bd4-0864-35ff-c517584428fe",
+            "hfid": [
+              "ktw-1-spine-02"
+            ],
+            "display_label": "ktw-1-spine-02",
+            "__typename": "DcimPhysicalDevice",
+            "position": {
+              "value": null
+            },
+            "serial": {
+              "value": null
+            },
+            "rack_face": {
+              "value": "front"
+            },
+            "status": {
+              "value": "active"
+            },
+            "role": {
+              "value": "spine"
+            },
+            "os_version": {
+              "value": null
+            },
+            "description": {
+              "value": null
+            },
+            "name": {
+              "value": "ktw-1-spine-02"
+            },
+            "location": {
+              "node": {
+                "id": "1856ac39-6f59-9315-35f4-c517a2631675",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "LocationBuilding"
+              }
+            },
+            "object_template": {
+              "node": {
+                "id": "1856abd7-186e-91ec-35fc-c51dca34d4b2",
+                "hfid": [
+                  "DCS-7280DR3-24-F_SPINE"
+                ],
+                "display_label": "DCS-7280DR3-24-F_SPINE",
+                "__typename": "TemplateDcimPhysicalDevice"
+              }
+            },
+            "device_type": {
+              "node": {
+                "id": "1856abd5-0269-8ad9-35f5-c51cfb1d6de7",
+                "hfid": [
+                  "DCS-7280DR3-24-F"
+                ],
+                "display_label": "DCS-7280DR3-24-F",
+                "__typename": "DcimDeviceType"
+              }
+            },
+            "platform": {
+              "node": {
+                "id": "1856abd4-804e-512d-35fd-c514a749aa3f",
+                "hfid": [
+                  "Arista EOS"
+                ],
+                "display_label": "Arista EOS",
+                "__typename": "DcimPlatform"
+              }
+            },
+            "primary_address": {
+              "node": {
+                "id": "1856ac39-fd54-120b-35fa-c51aea6a4588",
+                "hfid": [
+                  "172.20.2.2/24",
+                  "default"
+                ],
+                "display_label": "172.20.2.2/24",
+                "__typename": "IpamIPAddress"
+              }
+            },
+            "device_service": {
+              "count": 5,
+              "edges": [
+                {
+                  "node": {
+                    "id": "1856ac3d-b5b8-11da-35f8-c5106d9fe450",
+                    "hfid": [
+                      "KTW-1-SPINE-02-OSPF"
+                    ],
+                    "display_label": "ktw-1-spine-02 OSPF UNDERLAY",
+                    "__typename": "ServiceOSPF"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-7591-3859-35fa-c51119862c58",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-02 -> ktw-1-leaf-01 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-7606-812c-35f8-c5172d31a067",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-02 -> ktw-1-leaf-02 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-75f9-f881-35ff-c516153a9090",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-02 -> ktw-1-leaf-03 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "1856ac3e-7ac8-0937-35f0-c517802684e0",
+                    "hfid": null,
+                    "display_label": "ktw-1-spine-02 -> ktw-1-leaf-04 iBGP Session",
+                    "__typename": "ServiceBGPSession"
+                  }
+                }
+              ]
+            },
+            "topology": {
+              "node": {
+                "id": "1856ac36-dcdf-ab5a-35ff-c517be8484e9",
+                "hfid": [
+                  "KTW-1"
+                ],
+                "display_label": "KTW-1",
+                "__typename": "TopologyDataCenter"
+              }
+            },
+            "tags": {
+              "count": 0,
+              "edges": []
+            }
+          }
+        }
+      ]
+    }
+  }
+}
