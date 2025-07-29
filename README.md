@@ -1,6 +1,12 @@
 
 # Infrahub MCP LLM/AI Agent Context (Optimized)
 
+[![Ruff][ruff-badge]][ruff-link]
+[![Python][python-badge]][python-link]
+[![Actions status][github-badge]][github-link]
+[![Coverage Status][coverage-badge]][coverage-link]
+[![GitHub Discussion][github-discussions-badge]][github-discussions-link]
+
 ## Project Overview
 
 This project provides an optimized context and toolkit for integrating LLM/AI agents with the Infrahub Model Context Protocol (MCP) platform. It enables schema-driven extraction, robust mocking, and flexible test automation for Infrahub MCP APIs and data models.
@@ -8,19 +14,8 @@ This project provides an optimized context and toolkit for integrating LLM/AI ag
 ### Key Features
 - **Schema-driven extraction:** Utilities to extract attributes, relationships, and required fields from Infrahub schemas.
 - **Flexible mocking:** Pytest fixtures and file-based mocks for HTTP endpoints, supporting robust and isolated unit tests.
-- **Async and sync support:** Works with both async and sync InfrahubClient usage patterns.
 - **Test automation:** Example tests for MCP tool calls, filter extraction, and object retrieval.
 - **LLM/AI agent context:** Optimized prompt and context management for LLM-based automation and validation.
-
-### Usage
-- Use the provided fixtures and mocks to test MCP tool integrations.
-- Extract and validate schema fields and relationships for dynamic UI or LLM-driven workflows.
-- Run the `.dev/a.py` script for schema and object extraction examples.
-
-### Technologies
-- Python, pytest, pytest-asyncio, pytest-httpx
-- Infrahub MCP, InfrahubClient SDK
-- FastMCP, LLM/AI agent integration
 
 ### Sample prompt
 **LLM-Optimized Sample Prompt**
@@ -60,4 +55,23 @@ Agent:
 4. If user requests details, use `get_object_details` for that record
 
 
-
+[ruff-badge]:
+<https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json>
+[ruff-link]:
+(https://github.com/astral-sh/ruff)
+[github-discussions-link]:
+<https://github.com/t0m3kz/franc-mcp/discussions/>
+[github-discussions-badge]:
+<https://img.shields.io/static/v1?label=Discussions&message=Ask&color=blue&logo=github>
+[github-badge]:
+<https://github.com/t0m3kz/franc-mcp/actions/workflows/main.yml/badge.svg?branch=main>
+[github-link]:
+<https://github.com/t0m3kz/franc-mcp/actions/workflows/main.yml>
+[coverage-badge]:
+https://img.shields.io/codecov/c/github/t0m3kz/franc?label=coverage
+[coverage-link]:
+https://codecov.io/gh/t0m3kz/franc-mcp
+[python-badge]:
+<https://img.shields.io/badge/python-3.10%7C3.11%7C3.12%7C3.13-000000?logo=python>
+[python-link]:
+<https://www.python.org>
