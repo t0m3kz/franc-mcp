@@ -9,52 +9,93 @@
 
 ## Project Overview
 
-This project provides an optimized context and toolkit for integrating LLM/AI agents with the Infrahub Model Context Protocol (MCP) platform. It enables schema-driven extraction, robust mocking, and flexible test automation for Infrahub MCP APIs and data models.
+This project provides an MCP (Model Context Protocol) server for Infrahub, enabling LLM/AI agents to discover schemas, query objects, manage branches, and orchestrate data-center deployments. It includes schema-driven discovery, datacenter deployment helpers, and test automation with robust mocking.
 
 ### Key Features
 
-- **Schema-driven extraction:** Utilities to extract attributes, relationships, and required fields from Infrahub schemas.
-- **Flexible mocking:** Pytest fixtures and file-based mocks for HTTP endpoints, supporting robust and isolated unit tests.
-- **Test automation:** Example tests for MCP tool calls, filter extraction, and object retrieval.
-- **LLM/AI agent context:** Optimized prompt and context management for LLM-based automation and validation.
+- **Schema discovery & validation:** Tools to list schema nodes, retrieve filters, and validate required fields before mutations.
+- **Datacenter deployment orchestration:** Discover design/strategy/provider options, then create full deployments with `create_datacenter_deployment`.
+- **Branch management:** Create and list branches for isolated deployments and experiments.
+- **Node retrieval:** Query nodes by kind/filters, fetch related nodes, and navigate object graphs.
+- **Test automation:** Pytest fixtures with file-based mocks for deterministic, isolated unit tests.
+- **Agent guidance:** Shared best practices in `AGENTS.md` and `.github/agents/infrahub.agent.md` for consistent agent behavior.
 
-### Sample prompt
+## Available Tools
 
-You are an Infrahub MCP assistant. Use the following tools to answer infrastructure questions and perform operations:
+### Schema & Discovery
 
-**Workflow:**
+- `get_schema_mapping`: List all schema node kinds and generics.
+- `get_schema`: Retrieve full schema (attributes, relationships) for a specific kind.
+- `get_schemas`: Retrieve all schemas (optionally exclude Profiles/Templates).
+- `get_node_filters`: List valid filter keys for a kind.
+- `get_required_fields`: List required attribute fields for object creation.
 
-1. Use `list_schema_nodes` to discover available object kinds.
-2. Use `get_node_filters` to retrieve valid filters for the selected kind.
-3. Use `get_objects` to list objects, applying filters as needed.
-4. Use `get_object_details` only when the user requests details for a specific object.
-5. Use `get_required_fields` before creating or updating objects.
+### Node Retrieval
 
-**Tool Functions:**
+- `get_nodes`: Retrieve all objects of a specific kind with optional filters.
+- `get_related_nodes`: Fetch related nodes for a specific object and relationship.
 
-- `list_schema_nodes`: List all object kinds.
-- `get_node_filters`: List valid filters for a kind.
-- `get_objects`: List objects (display labels only).
-- `get_object_details`: Get all fields/relationships for an object.
-- `get_required_fields`: List required fields for a kind.
+### Branch Management
 
-**Best Practices:**
+- `branch_create`: Create a new branch with optional git sync.
+- `get_branches`: List all branches.
 
-- Always discover kinds and filters before querying or prompting.
-- Validate required fields before create/update.
-- Confirm deletes with the user.
-- Handle missing/None fields gracefully.
-- Prefer `display_label` for relationships; fallback to `id` if needed.
+### Datacenter Deployment
 
-**Example:**
+- `discover_datacenter_options`: List available metros, designs, strategies, and providers.
+- `create_datacenter_deployment`: Create a data-center topology on an isolated branch.
+- `validate_datacenter_deployment`: Validate that a deployment exists on a branch.
 
-User: "Show me all routers in Building A."
+### GraphQL
+
+- `get_graphql_schema`: Retrieve the complete GraphQL schema.
+- `query_graphql`: Execute arbitrary GraphQL queries.
+
+## Sample Workflow: Datacenter Deployment
+
+```text
+
+User: "Deploy a new datacenter in Berlin."
+
 Agent:
+1. discover_datacenter_options
+   → returns metros: ["BERLIN", "MUNICH", ...],
+            designs: ["S-Standard", "M-Standard", "L-Hierarchical", ...],
+            strategies: ["ebgp-evpn", "isis-ibgp", ...],
+            providers: ["Internal", "Technology Partner", ...]
 
-1. `list_schema_nodes` → find kind (e.g., "Device")
-2. `get_node_filters` for "Device" → find location filter
-3. `get_objects` with filter
-4. If user requests details, use `get_object_details` for that record
+2. Collect inputs from user:
+   - site_name: "DC-BER-1"
+   - metro_location: "BERLIN"
+   - design: "M-Standard"
+   - strategy: "ebgp-evpn"
+   - provider: "Internal"
+
+3. create_datacenter_deployment(
+     site_name="DC-BER-1",
+     metro_location="BERLIN",
+     design="M-Standard",
+     strategy="ebgp-evpn",
+     provider="Internal"
+   )
+   → returns branch name, topology summary, status
+
+4. validate_datacenter_deployment(branch="dc-deploy-dc-ber-1-...", site_name="DC-BER-1")
+   → confirms topology exists with expected attributes
+```
+
+## Best Practices
+
+For detailed agent guidance, see [AGENTS.md](AGENTS.md) and [.github/agents/infrahub.agent.md](.github/agents/infrahub.agent.md).
+
+**Quick summary:**
+
+- **Discover first:** Use `get_schema_mapping`/`get_node_filters`/`discover_datacenter_options` before prompting users.
+- **Validate inputs:** Check required fields with `get_required_fields` before mutations.
+- **Fail fast:** When queries return empty, restate kind/branch/filters and suggest remediation.
+- **Concise summaries:** Return counts and status in bullets/tables; avoid full object dumps unless requested.
+- **Datacenter flow:** Discover options → collect all inputs → call `create_datacenter_deployment` once.
+- **Branch naming:** Auto-generate branch names when not provided; avoid guessing values.
 
 [ruff-badge]:
 <https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json>

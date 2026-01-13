@@ -46,6 +46,15 @@ This guide keeps all automation agents aligned on workflow, quality gates, and p
 - Echo executed parameters in `ctx.info` (kind, branch, filters) so users see what actually ran.
 - Prefer short, explicit step lists in prompts for orchestrations (ask → confirm → act), especially for multi-step flows like data-center deployment.
 
+## Infrahub MCP quick actions (shared)
+
+- Discover options first: run `discover_datacenter_options` to list metros, designs, strategies, providers; reuse the results during the session instead of re-asking.
+- Gather creation inputs upfront: always collect `site_name`, `metro_location`, `design`, `strategy`, `provider`; if the schema requires subnets, also collect `management_subnet`, `customer_subnet`, `technical_subnet`; keep `branch_name` and `allocate_prefix_nodes` optional.
+- Use the DC helper: prefer a single `create_datacenter_deployment` call with the collected inputs; only fall back to piecemeal node creation if the helper fails.
+- Retrieval rules: for lists, use `get_nodes`; for specific objects, use explicit filters with `get_related_nodes`/`get_node_filters`; remember naming may differ across kinds (e.g., `TopologyDataCenter` vs pods/deployments).
+- Summaries: report concise counts (pods, devices per pod), pools, racks, and status using bullets or small tables; avoid full record dumps unless requested.
+- Fail fast with remediation: when lookups return empty, restate kind/branch/filters used and suggest the next lookup (e.g., list via `get_nodes` or search by index).
+
 ## Testing Notes
 
 - Tests rely on mocked HTTPX responses; keep call counts minimal for `get_objects`/`get_object_details` to avoid mismatch.

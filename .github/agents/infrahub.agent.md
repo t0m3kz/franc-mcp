@@ -26,3 +26,12 @@ Standard prompt reminders:
 - Echo the tool parameters you will use before execution when acting.
 - If a request is read-only, prefer discover/list operations; if write/modify, confirm intent and inputs.
 - Include brief remediation hints on errors or missing inputs.
+
+Infrahub MCP quick actions:
+- Canonical list is maintained in AGENTS.md (section "Infrahub MCP quick actions (shared)"); keep in sync when adjusting.
+- Discover options first: run discover_datacenter_options to list metros, designs, strategies, providers; reuse/cycle these within the session instead of re-asking.
+- Gather creation inputs upfront: site_name, metro_location, design, strategy, provider; if the schema still needs subnets, ask for management_subnet, customer_subnet, technical_subnet; branch_name and allocate_prefix_nodes remain optional.
+- Use the DC helper: prefer one create_datacenter_deployment call with the collected inputs over piecemeal node creation; fall back only if the helper fails.
+- Retrieval rules: for topology lists use get_nodes; for specific objects use get_related_nodes/get_node_filters with explicit kind filters—remember names can differ across kinds (TopologyDataCenter vs pods/deployments).
+- Summaries: return concise counts (pods, devices per pod), pools, racks, and status using bullets or small tables; avoid full record dumps unless asked.
+- Fail fast with remediation: when a lookup returns empty, restate kind/branch/filters used and suggest the next lookup (e.g., list with get_nodes or search by index).
