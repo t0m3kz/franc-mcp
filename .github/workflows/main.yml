@@ -22,7 +22,7 @@ jobs:
           uv run ruff check .
       - run: |
           echo "Running type checks"
-          uv run ty .
+          uv run ty check .
 
   tests:
     name: Testing plugin

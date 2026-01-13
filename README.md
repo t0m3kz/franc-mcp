@@ -1,5 +1,5 @@
 
-# Infrahub MCP LLM/AI Agent Context (Optimized)
+# Infrahub MCP LLM/AI Agent Context
 
 [![Ruff][ruff-badge]][ruff-link]
 [![Python][python-badge]][python-link]

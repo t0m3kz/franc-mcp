@@ -43,7 +43,7 @@ async def test_create_datacenter_deployment():
         "metro_location": "BERLIN",
         "design": "M-Standard",
         "strategy": "ebgp-evpn",
-            "provider": "Internal",
+        "provider": "Internal",
     }
 
     try:
@@ -63,7 +63,7 @@ async def test_create_datacenter_deployment():
         topo = data.get("topology", {})
         assert topo.get("name") == "DC-BER-1"
         assert topo.get("location") == "BERLIN"
-            assert "prefix_nodes" not in data
+        assert "prefix_nodes" not in data
     finally:
         # Ensure subsequent tests use a real InfrahubClient instead of FakeClient
         mcp.test_client = None
