@@ -2,12 +2,22 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 
+import tiktoken
+import toons
 from fastmcp import Context
 from infrahub_sdk.node import Attribute, InfrahubNode, RelatedNode, RelationshipManager
 from pydantic import BaseModel
 
 CURRENT_DIRECTORY = Path(__file__).parent.resolve()
 PROMPTS_DIRECTORY = CURRENT_DIRECTORY / "prompts"
+
+# Simple in-memory cache for schema metadata
+# Key: (branch, kind) -> schema data
+_SCHEMA_CACHE: dict[tuple[str | None, str], Any] = {}
+
+# Cache for schema mappings
+# Key: branch -> mapping dict
+_SCHEMA_MAPPING_CACHE: dict[str | None, dict[str, str]] = {}
 
 
 T = TypeVar("T")
@@ -149,3 +159,93 @@ async def convert_node_to_dict(*, obj: InfrahubNode, branch: str | None, include
                 )
             data[rel_name] = peers
     return data
+
+
+def encode_with_toon(data: Any) -> str:
+    """
+    Encode data using toon format for token-efficient transmission.
+
+    Args:
+        data: Python object to encode
+
+    Returns:
+        TOON-formatted string
+    """
+    return toons.dumps(data)  # type: ignore[attr-defined]
+
+
+def decode_from_toon(encoded: str) -> Any:
+    """
+    Decode data from toon format back to Python objects.
+
+    Args:
+        encoded: TOON-formatted string
+
+    Returns:
+        Decoded Python object
+    """
+    return toons.loads(encoded)  # type: ignore[attr-defined]
+
+
+def estimate_token_savings(data: Any) -> dict[str, Any]:
+    """
+    Calculate actual token savings from using toon encoding vs JSON.
+
+    Uses tiktoken (cl100k_base encoding for GPT-4) to measure real token counts.
+
+    Args:
+        data: Python object to analyze
+
+    Returns:
+        Dict with json_tokens, toon_tokens, json_length, toon_length, savings_percent
+    """
+    import json
+
+    json_str = json.dumps(data)
+    toon_str = toons.dumps(data)  # type: ignore[attr-defined]
+
+    # Get actual token counts using GPT-4 tokenizer
+    enc = tiktoken.get_encoding("cl100k_base")
+    json_tokens = len(enc.encode(json_str))
+    toon_tokens = len(enc.encode(toon_str))
+
+    # Also include character lengths for reference
+    json_len = len(json_str)
+    toon_len = len(toon_str)
+
+    # Calculate savings based on actual tokens
+    savings = ((json_tokens - toon_tokens) / json_tokens * 100) if json_tokens > 0 else 0
+
+    return {
+        "json_tokens": json_tokens,
+        "toon_tokens": toon_tokens,
+        "json_length": json_len,
+        "toon_length": toon_len,
+        "savings_percent": round(savings, 1),
+    }
+
+
+def get_cached_schema(branch: str | None, kind: str) -> Any | None:
+    """Retrieve cached schema if available."""
+    return _SCHEMA_CACHE.get((branch, kind))
+
+
+def cache_schema(branch: str | None, kind: str, schema: Any) -> None:
+    """Cache schema data to reduce redundant fetches."""
+    _SCHEMA_CACHE[(branch, kind)] = schema
+
+
+def get_cached_schema_mapping(branch: str | None) -> dict[str, str] | None:
+    """Retrieve cached schema mapping if available."""
+    return _SCHEMA_MAPPING_CACHE.get(branch)
+
+
+def cache_schema_mapping(branch: str | None, mapping: dict[str, str]) -> None:
+    """Cache schema mapping to reduce redundant fetches."""
+    _SCHEMA_MAPPING_CACHE[branch] = mapping
+
+
+def clear_schema_cache() -> None:
+    """Clear all cached schema data. Useful for testing or when schemas change."""
+    _SCHEMA_CACHE.clear()
+    _SCHEMA_MAPPING_CACHE.clear()

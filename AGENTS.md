@@ -8,6 +8,7 @@ This guide keeps all automation agents aligned on workflow, quality gates, and p
 - Discover before acting: use `get_schema_mapping` to list kinds, `get_node_filters` for filter keys, then `get_nodes`/`get_object_details`/`get_related_nodes` as needed.
 - Validate inputs: ensure required filters (IDs/HFIDs/names) exist before tool calls; return remediation via `_log_and_return_error` when inputs are incomplete.
 - Minimize calls: favor existing store data and include lists only when required; prefer display labels and fall back to IDs.
+- **Handle auto-compressed results**: Results with >10 items are automatically compressed with TOON format. Look for `*_toon` fields (e.g., `nodes_toon`, `objects_toon`) in responses. These contain the full data in TOON format - you can work with them directly for summaries or pass to other tools. Only use `toon_decode` if you need to inspect specific values.
 - Log clearly: use `ctx.info` for progress, `ctx.debug` for details, and include actionable remediation text on failures.
 - Use defaults consistently: default `branch` to `main` when not provided; never guess kinds or filter names.
 - Refuse to invent data: if a filter/key/value is missing, return remediation that asks for it instead of improvising.
@@ -40,6 +41,7 @@ This guide keeps all automation agents aligned on workflow, quality gates, and p
 
 - Instruct agents to: (1) discover schemas/filters before fetching objects, (2) confirm required fields before create/update, (3) ask before delete, (4) present remediation alongside errors.
 - Encourage concise intermediate summaries and numbered plans so downstream agents can pick up state quickly.
+- **Token optimization**: Results with >10 items are auto-compressed with TOON. Agents receive `*_toon` fields with compression stats. Work with TOON format directly for efficiency - decode only when inspecting specific values.
 - Provide example inputs/outputs when adding new tools to reduce ambiguity for other agents.
 - Add guardrails in prompts: “Use returned filter keys verbatim; do not invent fields; ask for missing filters.”
 - When requests are overly broad (e.g., unfiltered `get_nodes`), warn and suggest a narrowing filter before proceeding.

@@ -135,26 +135,113 @@ async def test_get_object(client, add_mock_response, httpx_mock):
         mockname="device.json",
         method="POST",
         url="http://localhost:8000/graphql/main",
-        is_reusable=True,  # Allow multiple POST requests for retry logic
     )
     try:
         async with Client(mcp) as client_session:
-            # Use get_nodes - supports GraphQL filters, returns display labels
-            devices = await client_session.call_tool(
-                "get_nodes",
-                {
-                    "kind": "DcimPhysicalDevice",
-                    "filters": {"name__value": "ktw-1-leaf-01"},
-                    "branch": "main",
-                },
+            # Use get_objects_details instead - more flexible and doesn't rely on hardcoded queries
+            device = await client_session.call_tool(
+                "get_objects_details",
+                {"kind": "DcimPhysicalDevice", "filters": {"name__value": "ktw-1-leaf-01"}, "limit": 1},
             )
-            data = _unwrap(devices)
+            data = _unwrap(device)
             assert isinstance(data, list)
             assert len(data) >= 1
+            device_data = data[0]
+            assert isinstance(device_data, dict)
+            
+            # Verify key fields are present
+            assert device_data["__typename"] == "DcimPhysicalDevice"
+            assert device_data["display_label"] == "ktw-1-leaf-01"
+            assert "name" in device_data
+            assert "device_type" in device_data
+    finally:
+        mcp.test_client = None
 
-            # get_nodes returns display labels (strings)
-            device_label = data[0]
-            assert isinstance(device_label, str)
-            assert "ktw" in device_label.lower() or "leaf" in device_label.lower()
+                "artifacts": [],
+                "description": None,
+                "device_service": [
+                    "ktw-1-leaf-01 OSPF UNDERLAY",
+                    "ktw-1-leaf-01 -> ktw-1-spine-01 iBGP Session",
+                    "ktw-1-leaf-01 -> ktw-1-spine-02 iBGP Session",
+                ],
+                "device_type": "CCS-720DP-48S-2F",
+                "display_label": "ktw-1-leaf-01",
+                "hfid": ["ktw-1-leaf-01"],
+                "id": "1856ac3a-c229-be0b-35f6-c51e674ed24c",
+                "interfaces": [
+                    "Console",
+                    "Ethernet1",
+                    "Ethernet10",
+                    "Ethernet11",
+                    "Ethernet12",
+                    "Ethernet13",
+                    "Ethernet14",
+                    "Ethernet15",
+                    "Ethernet16",
+                    "Ethernet17",
+                    "Ethernet18",
+                    "Ethernet19",
+                    "Ethernet2",
+                    "Ethernet20",
+                    "Ethernet21",
+                    "Ethernet22",
+                    "Ethernet23",
+                    "Ethernet24",
+                    "Ethernet25",
+                    "Ethernet26",
+                    "Ethernet27",
+                    "Ethernet28",
+                    "Ethernet29",
+                    "Ethernet3",
+                    "Ethernet30",
+                    "Ethernet31",
+                    "Ethernet32",
+                    "Ethernet33",
+                    "Ethernet34",
+                    "Ethernet35",
+                    "Ethernet36",
+                    "Ethernet37",
+                    "Ethernet38",
+                    "Ethernet39",
+                    "Ethernet4",
+                    "Ethernet40",
+                    "Ethernet41",
+                    "Ethernet42",
+                    "Ethernet43",
+                    "Ethernet44",
+                    "Ethernet45",
+                    "Ethernet46",
+                    "Ethernet47",
+                    "Ethernet48",
+                    "Ethernet49",
+                    "Ethernet5",
+                    "Ethernet50",
+                    "Ethernet51",
+                    "Ethernet52",
+                    "Ethernet6",
+                    "Ethernet7",
+                    "Ethernet8",
+                    "Ethernet9",
+                    "Management1",
+                    "loopback0",
+                ],
+                "location": "KTW-1",
+                "member_of_groups": [
+                    "arista_leaf",
+                    "create_dc-a6b020a364cc64b258db74db5dfb64b4",
+                    "topology_cabling__a6b020a364cc64b258db74db5dfb64b4",
+                ],
+                "name": "ktw-1-leaf-01",
+                "object_template": "CCS-720DP-48S-2F_LEAF",
+                "os_version": None,
+                "platform": "Arista EOS",
+                "position": None,
+                "rack_face": "front",
+                "role": "leaf",
+                "serial": None,
+                "status": "active",
+            }
+            for key, value in object_data.items():
+                assert data.get(key) == value
     finally:
         mcp.test_client = None

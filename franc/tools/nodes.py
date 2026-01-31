@@ -6,12 +6,14 @@ from infrahub_sdk.types import Order
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from franc.constants import schema_attribute_type_mapping
+from franc.constants import TOON_AUTO_THRESHOLD_ITEMS, schema_attribute_type_mapping
 from franc.utils import (
     MCPResponse,
     MCPToolStatus,
     _log_and_return_error,
     convert_node_to_dict,
+    encode_with_toon,
+    estimate_token_savings,
     extract_value,
     require_client,
 )
@@ -55,6 +57,18 @@ async def get_nodes(
             ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
         )
     branch = branch or "main"
+
+    # Log helpful info about relationship filters
+    if filters:
+        relationship_filters = [
+            k for k in filters.keys() if "__" in k and not k.endswith("__value") and not k.endswith("__values")
+        ]
+        if relationship_filters:
+            await ctx.info(
+                f"Using relationship filters: {relationship_filters}. "
+                "These filter on related objects without fetching them."
+            )
+
     await ctx.info(f"Fetching nodes of kind: {kind} with filters: {filters} from Infrahub...")
 
     # Verify if the kind exists in the schema and guide Tool if not
@@ -70,28 +84,73 @@ async def get_nodes(
     try:
         if filters:
             await ctx.debug(f"Applying filters: {filters} with partial_match={partial_match}")
-            nodes = await client.filters(
-                kind=schema.kind,
-                branch=branch,
-                partial_match=partial_match,
-                parallel=True,
-                order=Order(disable=True),
-                populate_store=True,
-                prefetch_relationships=True,
-                **filters,
-            )
+            try:
+                nodes = await client.filters(
+                    kind=schema.kind,
+                    branch=branch,
+                    partial_match=partial_match,
+                    parallel=True,
+                    order=Order(disable=True),
+                    populate_store=True,
+                    prefetch_relationships=True,
+                    **filters,
+                )
+            except SchemaNotFoundError:
+                # Retry without prefetch if peer schemas are missing
+                await ctx.debug("Peer schema missing; retrying without prefetch_relationships")
+                nodes = await client.filters(
+                    kind=schema.kind,
+                    branch=branch,
+                    partial_match=partial_match,
+                    parallel=True,
+                    order=Order(disable=True),
+                    populate_store=True,
+                    prefetch_relationships=False,
+                    **filters,
+                )
         else:
-            nodes = await client.all(
-                kind=schema.kind,
-                branch=branch,
-                parallel=True,
-                order=Order(disable=True),
-                populate_store=True,
-                prefetch_relationships=True,
-            )
+            try:
+                nodes = await client.all(
+                    kind=schema.kind,
+                    branch=branch,
+                    parallel=True,
+                    order=Order(disable=True),
+                    populate_store=True,
+                    prefetch_relationships=True,
+                )
+            except SchemaNotFoundError:
+                # Retry without prefetch if peer schemas are missing
+                await ctx.debug("Peer schema missing; retrying without prefetch_relationships")
+                nodes = await client.all(
+                    kind=schema.kind,
+                    branch=branch,
+                    parallel=True,
+                    order=Order(disable=True),
+                    populate_store=True,
+                    prefetch_relationships=False,
+                )
     except GraphQLError as exc:
-        return await _log_and_return_error(
-            ctx=ctx, error=exc, remediation="Check the provided filters or the kind name."
+        # Smart remediation: suggest checking filters or schema
+        remediation = (
+            "Check the provided filters or the kind name. "
+            f"Use get_node_filters(kind='{kind}') to see available filter keys. "
+            f"Use get_schema(kind='{kind}') to inspect the schema."
+        )
+        return await _log_and_return_error(ctx=ctx, error=exc, remediation=remediation)
+
+    # Smart remediation: if no results, suggest alternatives
+    if not nodes and filters:
+        # Try to suggest what to do
+        remediation = (
+            f"No objects found for kind={kind} with filters={filters}. "
+            f"Try: (1) Remove filters to see if any {kind} objects exist, "
+            f"(2) Use get_node_filters(kind='{kind}') to verify filter keys are correct, "
+            f"(3) Use partial_match=True for text filters."
+        )
+        await ctx.info(remediation)
+    elif not nodes:
+        await ctx.info(
+            f"No {kind} objects exist in branch '{branch}'. This may be expected if the kind is newly added."
         )
 
     # Format the response with serializable data
@@ -103,6 +162,24 @@ async def get_nodes(
 
     # Return the serialized response
     await ctx.debug(f"Retrieved {len(serialized_nodes)} nodes of kind {kind}")
+
+    # Auto-compression for results with >10 items
+    if len(serialized_nodes) > TOON_AUTO_THRESHOLD_ITEMS:
+        stats = estimate_token_savings(serialized_nodes)
+        await ctx.info(
+            f"Auto-compressing {len(serialized_nodes)} nodes with TOON "
+            f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
+        )
+        return MCPResponse(
+            status=MCPToolStatus.SUCCESS,
+            data={
+                "nodes_toon": encode_with_toon(serialized_nodes),
+                "count": len(serialized_nodes),
+                "kind": kind,
+                "compression_stats": stats,
+                "_note": "Result auto-compressed with TOON. Use toon_decode to expand if needed.",
+            },
+        )
 
     return MCPResponse(
         status=MCPToolStatus.SUCCESS,
@@ -121,13 +198,18 @@ async def get_node_filters(
 ) -> MCPResponse:
     """Retrieve all the available filters for a specific schema node kind.
 
-    Types produced (matching legacy test expectations):
-      - attribute__value        -> single value
-      - attribute__values       -> list of values
-      - relationship__attribute__value
-      - relationship__attribute__values
+    Filter types returned:
+      - attribute__value        -> Filter by single attribute value
+      - attribute__values       -> Filter by list of attribute values (OR condition)
+      - relationship__attribute__value    -> Filter by related object's attribute
+      - relationship__attribute__values   -> Filter by related object's attribute list
 
-    Missing peer schemas (not present in mock fixture) are skipped to avoid test failures.
+    Examples:
+      - {"name__value": "device-01"} - Get objects where name equals "device-01"
+      - {"status__values": ["active", "planned"]} - Get objects with status active OR planned
+      - {"location__name__value": "Paris"} - Get objects whose location's name is "Paris"
+
+    Note: Relationship filters allow filtering on related objects without fetching them.
     """
     try:
         client: InfrahubClient = require_client(ctx)
@@ -261,7 +343,7 @@ async def get_objects(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
     branch: Annotated[str | None, Field(default=None, description="Branch scope (optional).")],
-) -> MCPResponse[list[str]]:
+) -> MCPResponse:
     """
     Return display labels for all objects of a kind.
     Optimized to perform a single GraphQL request to satisfy test HTTPX expectations.
@@ -295,6 +377,25 @@ async def get_objects(
         return await _log_and_return_error(ctx=ctx, error=exc, remediation="GraphQL query failed.")
 
     labels = [str(getattr(n, "display_label", "")) for n in nodes if getattr(n, "display_label", None)]
+
+    # Auto-compression for results with >10 items
+    if len(labels) > TOON_AUTO_THRESHOLD_ITEMS:
+        stats = estimate_token_savings(labels)
+        await ctx.info(
+            f"Auto-compressing {len(labels)} objects with TOON "
+            f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
+        )
+        return MCPResponse(
+            status=MCPToolStatus.SUCCESS,
+            data={
+                "objects_toon": encode_with_toon(labels),
+                "count": len(labels),
+                "kind": kind,
+                "compression_stats": stats,
+                "_note": "Result auto-compressed with TOON. Use toon_decode to expand if needed.",
+            },
+        )
+
     return MCPResponse(status=MCPToolStatus.SUCCESS, data=labels)
 
 
@@ -308,16 +409,11 @@ async def get_object_details(
     """
     Return a flattened dictionary of a single object's attributes & relationships.
 
-    Extraction rules (matching test expectations):
-      - {"value": X} -> X
-      - {"node": {...}} -> node.display_label
-      - {"edges": [{ "node": {...}}, ...]} -> [each node.display_label]
-      - Lists are mapped recursively.
-
-    Optimization for tests:
-      For DcimPhysicalDevice we perform exactly one GET (schema) and one POST (raw GraphQL)
-      to satisfy the mocked responses. Typed retrieval is skipped to avoid extra POSTs and
-      missing peer schemas.
+    Returns:
+      - All attributes with their values
+      - All relationships with display_labels from related objects
+      - Single relationships: display_label string
+      - Multiple relationships: list of display_label strings
     """
     try:
         client: InfrahubClient = require_client(ctx)
@@ -326,7 +422,9 @@ async def get_object_details(
             ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
         )
 
-    # Always consume schema (tests mock this GET)
+    branch = branch or "main"
+
+    # Get schema for the kind
     try:
         schema = await client.schema.get(kind=kind, branch=branch)
     except SchemaNotFoundError:
@@ -336,99 +434,44 @@ async def get_object_details(
             remediation="Use get_schema_mapping to list available kinds.",
         )
 
-    if kind == "DcimPhysicalDevice":
-        name_value = filters.get("name")
-        if not name_value:
-            return await _log_and_return_error(
-                ctx=ctx,
-                error="Missing 'name' filter.",
-                remediation="Provide filters={'name': '<device-name>'}.",
-            )
-        # Unfiltered query matches mocked device.json; handle both wrapped ({"data": {...}}) and unwrapped ({...}) responses.
-        query = """
-        query {
-          DcimPhysicalDevice {
-            edges {
-              node {
-                id
-                hfid
-                display_label
-                __typename
-                position { value }
-                serial { value }
-                rack_face { value }
-                status { value }
-                role { value }
-                os_version { value }
-                description { value }
-                name { value }
-                location { node { display_label } }
-                object_template { node { display_label } }
-                profiles { edges { node { display_label } } }
-                device_type { node { display_label } }
-                artifacts { edges { node { display_label } } }
-                subscriber_of_groups { edges { node { display_label } } }
-                member_of_groups { edges { node { display_label } } }
-                platform { node { display_label } }
-                primary_address { node { display_label } }
-                device_service { edges { node { display_label } } }
-                topology { node { display_label } }
-                tags { edges { node { display_label } } }
-                interfaces { edges { node { display_label } } }
-              }
-            }
-          }
-        }
-        """
-        try:
-            response = await client.execute_graphql(query=query)
-            data_root = response.get("data", response)
-            device_root = data_root.get("DcimPhysicalDevice", {})
-            edges = device_root.get("edges", [])
-            if not edges:
-                return await _log_and_return_error(
-                    ctx=ctx,
-                    error=f"No object found for kind={kind} with filters={filters}.",
-                    remediation="Verify the provided name.",
-                )
-            node = edges[0].get("node", {})
-            queried_name = extract_value(node.get("name", {}))
-            if queried_name != name_value:
-                return await _log_and_return_error(
-                    ctx=ctx,
-                    error=f"No object found for kind={kind} with filters={filters}.",
-                    remediation="Verify the provided name.",
-                )
-            flattened = {k: extract_value(v) for k, v in node.items()}
-            return MCPResponse(status=MCPToolStatus.SUCCESS, data=flattened)
-        except Exception as exc:  # noqa: BLE001
-            return await _log_and_return_error(
-                ctx=ctx,
-                error=exc,
-                remediation="Raw GraphQL query failed.",
-            )
-
-    # Generic path for other kinds (retain typed retrieval)
+    # Build list of relationships to include - try to include all, skip missing peer schemas
     rel_many: list[str] = []
     for r in getattr(schema, "relationships", []):
-        if getattr(r, "cardinality", "") != "many":
-            continue
         try:
             await client.schema.get(kind=r.peer, branch=branch)
+            if getattr(r, "cardinality", "") == "many":
+                rel_many.append(r.name)
         except SchemaNotFoundError:
             await ctx.debug(f"Skipping include for '{r.name}' (peer schema '{r.peer}' missing).")
             continue
-        rel_many.append(r.name)
 
     try:
-        obj = await client.get(
-            kind=schema.kind,
-            branch=branch,
-            include=rel_many,
-            prefetch_relationships=True,
-            populate_store=True,
-            **filters,
-        )
+        # For .get(), we need to handle the filter differently
+        # If we have name__value, convert to just the field name for .filters()
+        # Then take the first result
+        if len(filters) == 1 and list(filters.keys())[0].endswith("__value"):
+            # Use .filters() instead of .get() for GraphQL-style filters
+            filter_key = list(filters.keys())[0]
+            objs = await client.filters(
+                kind=schema.kind,
+                branch=branch,
+                include=rel_many,
+                prefetch_relationships=False,  # Avoid schema errors
+                populate_store=True,
+                parallel=False,
+                **{filter_key: filters[filter_key]},
+            )
+            obj = objs[0] if objs else None
+        else:
+            # Use direct .get() for simple filters
+            obj = await client.get(
+                kind=schema.kind,
+                branch=branch,
+                include=rel_many,
+                prefetch_relationships=False,  # Avoid schema errors
+                populate_store=True,
+                **filters,
+            )
     except Exception as exc:  # noqa: BLE001
         return await _log_and_return_error(ctx=ctx, error=exc, remediation="Object retrieval failed.")
 
@@ -439,6 +482,180 @@ async def get_object_details(
             remediation="Verify filter keys and values using get_node_filters.",
         )
 
-    raw = obj.get_raw_graphql_data() or {}
-    flattened = {k: extract_value(v) for k, v in raw.items()}
-    return MCPResponse(status=MCPToolStatus.SUCCESS, data=flattened)
+    # Build result with all attributes and relationships
+    result = {}
+    
+    # Add all attributes
+    for attr_name in schema.attribute_names:
+        attr = getattr(obj, attr_name, None)
+        if attr is not None:
+            result[attr_name] = attr.value if hasattr(attr, "value") else str(attr)
+    
+    # Add all relationships with display_labels
+    for rel_name in schema.relationship_names:
+        rel = getattr(obj, rel_name, None)
+        if rel is None:
+            result[rel_name] = None
+            continue
+        
+        # Handle single relationships
+        if hasattr(rel, "peer") and rel.peer:
+            peer = rel.peer
+            result[rel_name] = getattr(peer, "display_label", str(peer))
+        # Handle multiple relationships
+        elif hasattr(rel, "peers"):
+            result[rel_name] = [
+                getattr(p.peer, "display_label", str(p.peer)) if hasattr(p, "peer") else str(p)
+                for p in rel.peers
+            ]
+        else:
+            result[rel_name] = str(rel)
+    
+    return MCPResponse(status=MCPToolStatus.SUCCESS, data=result)
+
+
+@mcp.tool(tags={"nodes", "retrieve", "batch"}, annotations=ToolAnnotations(readOnlyHint=True))
+async def get_objects_details(
+    ctx: Context,
+    kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
+    filters: Annotated[dict[str, Any] | None, Field(default=None, description="Filters to narrow down objects.")],
+    branch: Annotated[str | None, Field(default=None, description="Branch scope (optional).")],
+    limit: Annotated[int | None, Field(default=100, description="Maximum number of objects to fetch (default 100).")],
+    fields: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description="Specific fields to retrieve (attributes/relationships). If None, fetches all fields.",
+        ),
+    ],
+) -> MCPResponse:
+    """
+    Fetch multiple objects with their full attributes and relationships in one query.
+
+    This is more efficient than calling get_object_details multiple times.
+    Perfect for requests like "list all devices with their IP addresses".
+
+    Args:
+        kind: Kind of the objects to retrieve
+        filters: Optional filters to apply (e.g., {"status__value": "active"})
+        branch: Branch to query (defaults to main)
+        limit: Maximum number of objects to return (default 100)
+        fields: Specific fields to retrieve. Examples:
+                ["name", "primary_address"] - only these fields
+                None (default) - all fields
+
+    Returns:
+        MCPResponse with list of flattened object dictionaries
+    """
+    try:
+        client: InfrahubClient = require_client(ctx)
+    except RuntimeError as exc:
+        return await _log_and_return_error(
+            ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
+        )
+
+    branch = branch or "main"
+    filters = filters or {}
+
+    await ctx.info(f"Fetching details for {kind} objects (limit={limit})...")
+
+    try:
+        schema = await client.schema.get(kind=kind, branch=branch)
+    except SchemaNotFoundError:
+        return await _log_and_return_error(
+            ctx=ctx,
+            error=f"Schema not found for kind: {kind}.",
+            remediation="Use get_schema_mapping to list available kinds.",
+        )
+
+    # Build includes for many-cardinality relationships
+    # Filter by requested fields if specified
+    rel_many: list[str] = []
+    for r in getattr(schema, "relationships", []):
+        # Skip if fields specified and this relationship not requested
+        if fields is not None and r.name not in fields:
+            continue
+        if getattr(r, "cardinality", "") != "many":
+            continue
+        try:
+            await client.schema.get(kind=r.peer, branch=branch)
+        except SchemaNotFoundError:
+            await ctx.debug(f"Skipping include for '{r.name}' (peer schema '{r.peer}' missing).")
+            continue
+        rel_many.append(r.name)
+
+    if fields:
+        await ctx.info(f"Retrieving only specified fields: {fields}")
+
+    try:
+        objects = await client.all(
+            kind=schema.kind,
+            branch=branch,
+            include=rel_many,
+            prefetch_relationships=True,
+            populate_store=True,
+            limit=limit,
+            **filters,
+        )
+    except Exception as exc:  # noqa: BLE001
+        return await _log_and_return_error(ctx=ctx, error=exc, remediation="Batch object retrieval failed.")
+
+    if not objects:
+        # Smart remediation with specific suggestions
+        remediation = (
+            f"No objects found for kind={kind} with filters={filters}. "
+            f"Suggestions: "
+            f"(1) Try get_nodes(kind='{kind}') to see if ANY objects exist. "
+            f"(2) Use get_node_filters(kind='{kind}') to verify filter syntax. "
+        )
+        if filters:
+            remediation += f"(3) Remove filters to see all {kind} objects. "
+            # Check if using relationship filters
+            rel_filters = [k for k in filters.keys() if "__" in k]
+            if rel_filters:
+                remediation += f"(4) Relationship filters detected: {rel_filters} - verify related objects exist."
+
+        return await _log_and_return_error(
+            ctx=ctx,
+            error=f"No objects found for kind={kind} with filters={filters}.",
+            remediation=remediation,
+        )
+
+    # Flatten all objects, filtering by requested fields
+    flattened_objects = []
+    for obj in objects:
+        raw = obj.get_raw_graphql_data() or {}
+        flattened = {k: extract_value(v) for k, v in raw.items()}
+
+        # Filter to requested fields if specified
+        if fields:
+            flattened = {
+                k: v for k, v in flattened.items() if k in fields or k in ["id", "display_label", "__typename"]
+            }
+
+        flattened_objects.append(flattened)
+
+    await ctx.info(f"Retrieved {len(flattened_objects)} {kind} objects with full details")
+
+    # Auto-compression for results with >10 items
+    if len(flattened_objects) > TOON_AUTO_THRESHOLD_ITEMS:
+        stats = estimate_token_savings(flattened_objects)
+        await ctx.info(
+            f"Auto-compressing {len(flattened_objects)} objects with TOON "
+            f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
+        )
+        return MCPResponse(
+            status=MCPToolStatus.SUCCESS,
+            data={
+                "objects_details_toon": encode_with_toon(flattened_objects),
+                "count": len(flattened_objects),
+                "kind": kind,
+                "compression_stats": stats,
+                "_note": "Result auto-compressed with TOON. Use toon_decode to expand if needed.",
+            },
+        )
+
+    return MCPResponse(
+        status=MCPToolStatus.SUCCESS,
+        data=flattened_objects,
+    )

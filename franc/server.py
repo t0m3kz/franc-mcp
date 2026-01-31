@@ -13,9 +13,9 @@ from infrahub_sdk import InfrahubClient
 
 from franc.tools.branch import mcp as branch_mcp
 from franc.tools.datacenter import mcp as datacenter_mcp
-from franc.tools.gql import mcp as graphql_mcp
 from franc.tools.nodes import mcp as nodes_mcp
 from franc.tools.schema import mcp as schema_mcp
+from franc.tools.toon import mcp as toon_mcp
 
 logger = logging.getLogger("franc.server")
 
@@ -76,7 +76,7 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[ApplicationContext]:
 mcp = FrancFastMCP("Franc MCP", lifespan=app_lifespan)
 
 mcp.mount(branch_mcp)
-mcp.mount(graphql_mcp)
 mcp.mount(nodes_mcp)
 mcp.mount(schema_mcp)
+mcp.mount(toon_mcp)
 mcp.mount(datacenter_mcp)

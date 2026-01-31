@@ -51,6 +51,35 @@ This project provides an MCP (Model Context Protocol) server for Infrahub, enabl
 - `get_graphql_schema`: Retrieve the complete GraphQL schema.
 - `query_graphql`: Execute arbitrary GraphQL queries.
 
+### Token Optimization (Toon)
+
+- `toon_encode`: Compress data structures using the toon protocol (30-70% token reduction).
+- `toon_decode`: Decode toon-encoded data back to Python objects.
+- `toon_analyze`: Analyze potential token savings without encoding.
+
+**When to use toon:**
+- Results with >10 items are **automatically compressed** by `get_nodes`/`get_objects`
+- Look for `*_toon` fields in responses (e.g., `nodes_toon`)
+- Manual tools available for custom compression needs
+- Nested structures with repeated keys
+
+**Example:**
+```python
+# Analyze first
+result = toon_analyze(data=large_device_list)
+# → Shows 45% potential savings
+
+# Encode if worthwhile
+encoded = toon_encode(data=large_device_list, show_stats=True)
+# → Returns compact toon string
+
+# Decode when needed
+decoded = toon_decode(toon_string=encoded["toon_encoded"])
+# → Restores original structure
+```
+
+## Sample Workflow: Datacenter Deployment
+
 ## Sample Workflow: Datacenter Deployment
 
 ```text
