@@ -670,7 +670,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=2.10.5" },
-    { name = "infrahub-sdk", extras = ["all"], specifier = ">=1.13.3" },
+    { name = "infrahub-sdk", extras = ["all"], specifier = ">=1.20.0" },
     { name = "tiktoken", specifier = ">=0.12.0" },
     { name = "toons", specifier = ">=0.1.4" },
 ]
@@ -763,7 +763,7 @@ wheels = [
 
 [[package]]
 name = "infrahub-sdk"
-version = "1.18.1"
+version = "1.20.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dulwich" },
@@ -776,9 +776,9 @@ dependencies = [
     { name = "ujson" },
     { name = "whenever" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/1d/475819223ea2ee809329e896c3dce91abd1e4f29b12de292816666ad8e7a/infrahub_sdk-1.18.1.tar.gz", hash = "sha256:70768bcd9220170d327f26362969a62445af22c6ba915244c9441d5195d8ee47", size = 758835, upload-time = "2026-01-09T04:23:10.947Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/7b/403c9cf80edec45c347541461a05a363fd5caf63915bfaa418cd148cf044/infrahub_sdk-1.20.0.tar.gz", hash = "sha256:70756bbdaf8dd14de7b270af01cea7861bb65baa513f7b87cf2a58d00cea4b78", size = 976371, upload-time = "2026-04-24T19:26:19.028Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2b/f1/a8ef0cc4fa5edbc71961dda666ca946da0a2d372fedad572aaf8c09ccf8d/infrahub_sdk-1.18.1-py3-none-any.whl", hash = "sha256:ce0f2497661d4924709268a72cb2ba6235208610a6f338dcaa40da21390160fc", size = 198117, upload-time = "2026-01-09T04:23:09.396Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/ba/0633d5b4b0add03997bffc4f9077a50b5325d2db3ad0e771d93d39967492/infrahub_sdk-1.20.0-py3-none-any.whl", hash = "sha256:a7fb6ed61228e59edcebbf79132b0c038ff3508188ef5bf5134808e47564804e", size = 239300, upload-time = "2026-04-24T19:26:17.444Z" },
 ]
 
 [package.optional-dependencies]
