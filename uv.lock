@@ -756,7 +756,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pymarkdownlnt", specifier = ">=0.9.34" },
-    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-httpx", specifier = ">=0.35.0" },
     { name = "ruff", specifier = ">=0.11.8" },
