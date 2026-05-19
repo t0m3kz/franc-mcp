@@ -750,7 +750,7 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2.10.5" },
     { name = "infrahub-sdk", extras = ["all"], specifier = ">=1.13.3" },
     { name = "tiktoken", specifier = ">=0.12.0" },
-    { name = "toons", specifier = ">=0.1.4" },
+    { name = "toons", specifier = ">=0.6.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1857,7 +1857,6 @@ dependencies = [
     { name = "application-file-scanner" },
     { name = "application-properties" },
     { name = "columnar" },
-    { name = "py-walk" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ec/08/f7ef72181e8e32016a037beae5bde01f900dba28c2c3b7613149b0f56e04/pymarkdownlnt-0.9.35.tar.gz", hash = "sha256:89529c9bbd3fc4258b2bf4652a07e98093ee665f5abadccc7d1a7a36b92e2c4d", size = 428485, upload-time = "2026-01-25T01:08:00.041Z" }
@@ -2587,26 +2586,25 @@ wheels = [
 
 [[package]]
 name = "toons"
-version = "0.4.0"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b8/c7/374708ade2870441c91bb6653d6f1adf14d92363a2ce311ad8ccf5ae507c/toons-0.4.0.tar.gz", hash = "sha256:1d81c00a44f6aea589de07096f0f229e4e20dffb0083ae7f8af42abdb2fd4afe", size = 79606, upload-time = "2026-01-02T13:32:56Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/e9/fe70fb22d076f72555ef4c3a4e38c860af1007d767935ebc219182c7c9b2/toons-0.6.0.tar.gz", hash = "sha256:b27af00031379107bd68e99fb2f0d2a4715d884cdd7828d187c9f2ba9f4f5c89", size = 63666, upload-time = "2026-05-15T18:49:02.295Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/7b/83c8205e363a3e583436bee2644fdcec5d958e812fd7a4d01360f7ad10ae/toons-0.4.0-cp37-abi3-macosx_10_12_x86_64.whl", hash = "sha256:2f3f08c1a0e8b26c6447092c590b57a00a72745e1d1f19347fa86fc3f201d4d2", size = 290428, upload-time = "2026-01-02T13:32:50.114Z" },
-    { url = "https://files.pythonhosted.org/packages/13/86/e438fe106bbce41ec3ebeae07baec858076f6a72899d4c90cbc639ac04de/toons-0.4.0-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:d1805b2a2ff7ccacd019dc537501ad20a38b32fa454cd2dfc21bf1233d1d9530", size = 285270, upload-time = "2026-01-02T13:32:48.87Z" },
-    { url = "https://files.pythonhosted.org/packages/b6/85/c8853c7fbfa46199de3c6c171b3bd45c7dc87810f119c823b5c015064bbb/toons-0.4.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ddb47940e7dba7a143fe1f7f936c212fc2cbee2e45c625699e15728b96334b09", size = 310425, upload-time = "2026-01-02T13:32:38.545Z" },
-    { url = "https://files.pythonhosted.org/packages/4a/d6/6cb653227aef071c8db3f6546e0ed6c7f14bd27ed7cd9a8939cb1b2ee1e4/toons-0.4.0-cp37-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:57da42a53d5b43914a9b314854dce143197d2a5c58eac58c0d7955afaa09f18c", size = 320204, upload-time = "2026-01-02T13:32:40.036Z" },
-    { url = "https://files.pythonhosted.org/packages/49/14/019180f70f11f25ba3419771aae819b1de6a5ebd9c82db39c39d13d9209a/toons-0.4.0-cp37-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:124ac90df858fbee9bf13e37eb8015e184e91f52d874886d112494484a446e67", size = 437888, upload-time = "2026-01-02T13:32:41.24Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/e9/5f3568f665d446a7232ab3b895433ecce88e39cfa4f398c98f49b0530384/toons-0.4.0-cp37-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c6b493d066a148d46ba235abe360298920eb90eb54f3ffd1442bf6af33a0d90e", size = 348240, upload-time = "2026-01-02T13:32:42.645Z" },
-    { url = "https://files.pythonhosted.org/packages/b2/10/4e7d9a00ef8d31e3aac598f1b5734b57fb3fa892fe94d22e72ae529e8dc6/toons-0.4.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:45535774a9660a55e6b023c4a20e05d5120dbf51418934e2ec6b4d3fa3e532d5", size = 320335, upload-time = "2026-01-02T13:32:46.621Z" },
-    { url = "https://files.pythonhosted.org/packages/7c/ac/f6480ac4a854a04368e7b52d999c142ab58a993d19076e77ffb7b6bf08dd/toons-0.4.0-cp37-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:83f726030fc8108b512d274d3a5d19552845fe859765222a8a32db595b9d7216", size = 336723, upload-time = "2026-01-02T13:32:43.769Z" },
-    { url = "https://files.pythonhosted.org/packages/e0/13/e8c594bdef40b238e3b7edd4f0f3e4ec8c9266133a44c1d1be1a1e4f307c/toons-0.4.0-cp37-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2ccdccf075c2833453190414db7af796b58ca8595b02d17abde5bbcd850eea00", size = 492627, upload-time = "2026-01-02T13:32:51.108Z" },
-    { url = "https://files.pythonhosted.org/packages/20/8b/e33ab729e4592536b328e4ddcc0288e4c08a313461154425bad3ca48c39d/toons-0.4.0-cp37-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:fd2e41c183b1681e78034b623e463a955da2f3f2a2d107d7c8ab90470cdee1be", size = 590721, upload-time = "2026-01-02T13:32:52.507Z" },
-    { url = "https://files.pythonhosted.org/packages/81/58/39f3cd4a2deffefd2c4ec4d5b6f2852c71da8061a6859a42107ff11c38ec/toons-0.4.0-cp37-abi3-musllinux_1_2_i686.whl", hash = "sha256:56c60d8e0a908eb921721137b09d1fda1a8ac105fdae687d4d4d1f6d97e3d75e", size = 555582, upload-time = "2026-01-02T13:32:53.89Z" },
-    { url = "https://files.pythonhosted.org/packages/af/ed/a3c456174d4635f71d2586f8ce67146a94d4dd6ae90e8c565e2e637d0a7f/toons-0.4.0-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:af1bcde2165ba580d59ef77342422df17e0a98d448628025de68bb92dcf3e905", size = 522678, upload-time = "2026-01-02T13:32:54.995Z" },
-    { url = "https://files.pythonhosted.org/packages/40/27/39dfd11e01ff066b12632b83959a5c99c59e895eeb1f8e628b07f4337a79/toons-0.4.0-cp37-abi3-win32.whl", hash = "sha256:35050ffb18343847acc7990d74d2a0897b9ce8326a0283503e20ed29ad84cf5f", size = 167294, upload-time = "2026-01-02T13:32:57.933Z" },
-    { url = "https://files.pythonhosted.org/packages/7b/da/576b24d5c034df69ad88404b00968c8f51a73447cb659e0d2cc0563ef8d9/toons-0.4.0-cp37-abi3-win_amd64.whl", hash = "sha256:d9d44a2e4bc2779e6c45e238ceda73d507659c8cbb0b9513ea0e7a2394559293", size = 172884, upload-time = "2026-01-02T13:32:57.017Z" },
-    { url = "https://files.pythonhosted.org/packages/ca/1d/1c8476de4036e92dcce39cc846f1306d6ae67f8bcc3c344ecffee5c20214/toons-0.4.0-pp311-pypy311_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b3e8a71559900bfa10fe62b3b8333d1ab3d0ad56ea45aeb9f7debe9c84c599cf", size = 315867, upload-time = "2026-01-02T13:32:47.685Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/a1/ab0a1a661eb5cffdc0d3ef10ec220fa34059c872ab0d9651503a4c14b61d/toons-0.4.0-pp311-pypy311_pp73-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:7ec7a84fe11ded76cd3c14698a58102fbcb8418bf834a45bab8ee2b3e73e76cd", size = 333136, upload-time = "2026-01-02T13:32:45.135Z" },
+    { url = "https://files.pythonhosted.org/packages/83/52/98759a389577602e5bc8cb5c72012231ce3ff1d41953fcec41957145a110/toons-0.6.0-cp37-abi3-macosx_10_12_x86_64.whl", hash = "sha256:65a292f97441eaabdb7bd56671763dff01841cec22d412b93ea6311dc719fc01", size = 308134, upload-time = "2026-05-15T18:49:12.584Z" },
+    { url = "https://files.pythonhosted.org/packages/61/ab/b6e4f90692695d53bfd786060a437f2137750f9b5f0a3a152b9fff83c7a7/toons-0.6.0-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:c1077dd110a44c29093032354aba117e0e40da472fef0780033d4579987761fd", size = 303837, upload-time = "2026-05-15T18:49:14.222Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/79/75b0035ba2a17d3df8abf0c9cad479d2fb3e3103f6139442145ed3807fbd/toons-0.6.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8b95925304f277e121882836125ac292e15f0a40a8a5c794cc3615ae0ba3dc5f", size = 335901, upload-time = "2026-05-15T18:49:05.665Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/d4/edc4c9156be718ac4d593c9a366430b832f3a8b32c4a965aa3bba27f5707/toons-0.6.0-cp37-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:f210388e6538f38b9f65e668c6da2ec625258bfb3f3e33de74d910d1b9c2abb6", size = 343650, upload-time = "2026-05-15T18:48:57.913Z" },
+    { url = "https://files.pythonhosted.org/packages/83/21/d3824befbf0465780bb152cea77b72aec0b31802aabc7ea0d25f683bd12a/toons-0.6.0-cp37-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:da1792de6168dfcb340a713c0d3e42afab05ebe50513c650a369b0d19773f3b3", size = 449797, upload-time = "2026-05-15T18:49:15.534Z" },
+    { url = "https://files.pythonhosted.org/packages/70/a5/8a3c34312e3c7e66c6f84546f96719e08ff54dc3b2d83d3f9129f70e0083/toons-0.6.0-cp37-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:005f859860110345084c4695f0072b5bec0118b24b0eb63512aeaba9225f24c4", size = 371454, upload-time = "2026-05-15T18:49:09.216Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/07/9ddb260d063b979022d6573d1f08ae1a2b5193e41d8c957a6a1ea1ea3a7f/toons-0.6.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a4884a4aac581444218d90171a8afebf4c72bb046ae7905315b9e0d13f719370", size = 344671, upload-time = "2026-05-15T18:49:08.19Z" },
+    { url = "https://files.pythonhosted.org/packages/57/f0/5d707ba468f57dc18da2e9c9bfb8d8679e2733a3a4e3e876c35fb6eddfe8/toons-0.6.0-cp37-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:990bee3a5b39b46b6ac94ae87525af37b14eaf973f091a180dc5f3f2c3c5b1dd", size = 365292, upload-time = "2026-05-15T18:48:59.178Z" },
+    { url = "https://files.pythonhosted.org/packages/94/ad/c73ad14dfbd1f83bf5b3b38d8bb0c54bd56ff67a82dbd60a4727926d15fe/toons-0.6.0-cp37-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:7c91654576d64c24f9e167fd61c55a071116e88e8923abd7e8539789a34d1a3f", size = 512544, upload-time = "2026-05-15T18:49:03.355Z" },
+    { url = "https://files.pythonhosted.org/packages/76/09/002815a958708651d85ef1cb06e33ac5fad317605589fc82ceb729dbea79/toons-0.6.0-cp37-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:1419846fdcf2f605b538807e0f6fd168f9c665fd72e8e6fc963ea19c8b17b738", size = 618781, upload-time = "2026-05-15T18:49:04.614Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/ca/faa098ec8f0614412d13ab79df64552f300a42df935c529b1e13ef5a35ed/toons-0.6.0-cp37-abi3-musllinux_1_2_i686.whl", hash = "sha256:3a051c90778b7e817a0ba5ace44df449886ea2c156cbb8cbb23d1f9d92ba1d4a", size = 581866, upload-time = "2026-05-15T18:49:01.064Z" },
+    { url = "https://files.pythonhosted.org/packages/98/e5/0a9ad38e529972e7d7cde834840ab942fc35e221b279cc1ec3d83c011285/toons-0.6.0-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:ca8edc9ad90413e5cfb1aad26d3486b5a67cdd4c6bd4615d7749c088d9402d95", size = 547379, upload-time = "2026-05-15T18:48:56.204Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/89/3a169f30d52ff1d3b900acc30e0700a6ff175f73c974e176d88247a35e92/toons-0.6.0-cp37-abi3-win32.whl", hash = "sha256:fae71e64a3723b4d5d58d03cb0de2af59e560d335d07739401c9357caf8173c2", size = 191244, upload-time = "2026-05-15T18:49:10.375Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/1c/34cbf07e880f31fcc0481e71d776791f9ffe51852835c5aabc52367b18fa/toons-0.6.0-cp37-abi3-win_amd64.whl", hash = "sha256:e2836b4900985f9deeadbc2e171d32dde536785cfe912be07f36ef2183d7a856", size = 199106, upload-time = "2026-05-15T18:49:11.61Z" },
+    { url = "https://files.pythonhosted.org/packages/95/5a/5a8cd21bf5b2f587571a368e580efbacda6e73770999dc93168a40fb3903/toons-0.6.0-cp37-abi3-win_arm64.whl", hash = "sha256:83ebc5ed112cf5beb1bbe72ce12c9cde9a2c370a65aebc8751cbae9fb466c16b", size = 193007, upload-time = "2026-05-15T18:49:06.755Z" },
 ]
 
 [[package]]
