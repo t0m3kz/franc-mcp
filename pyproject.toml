@@ -13,7 +13,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pymarkdownlnt>=0.9.34",
+    "pymarkdownlnt>=0.9.37",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "pytest-httpx>=0.35.0",
