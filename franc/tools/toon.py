@@ -47,14 +47,13 @@ async def toon_encode(
         }
 
         if show_stats:
-            stats = estimate_token_savings(data)
+            stats, _ = estimate_token_savings(data)
             response_data["statistics"] = stats
-            chars_saved = stats["json_length"] - stats["toon_length"]
-            await ctx.info(f"Toon encoding complete: {stats['savings_percent']}% reduction ({chars_saved} chars saved)")
+            await ctx.info(f"Toon encoding complete: {stats['savings_percent']}% token reduction")
 
         return MCPResponse(status=MCPToolStatus.SUCCESS, data=response_data)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return await _log_and_return_error(
             ctx, f"Toon encoding failed: {e}", remediation="Ensure data is JSON-serializable (dicts, lists, primitives)"
         )
@@ -83,7 +82,7 @@ async def toon_decode(
 
         return MCPResponse(status=MCPToolStatus.SUCCESS, data={"decoded": decoded_data})
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return await _log_and_return_error(
             ctx, f"Toon decoding failed: {e}", remediation="Ensure input is a valid toon-encoded string"
         )
@@ -113,9 +112,8 @@ async def toon_analyze(
     await ctx.info("Analyzing potential toon compression savings")
 
     try:
-        stats = estimate_token_savings(data)
+        stats, _ = estimate_token_savings(data)
 
-        # Add recommendation
         savings_pct = stats["savings_percent"]
         if savings_pct < 20:
             recommendation = "Low savings - consider keeping original format"
@@ -124,13 +122,9 @@ async def toon_analyze(
         else:
             recommendation = "Excellent savings - strongly recommend toon encoding"
 
-        stats["recommendation"] = recommendation
+        return MCPResponse(status=MCPToolStatus.SUCCESS, data={**stats, "recommendation": recommendation})
 
-        await ctx.info(f"Analysis complete: {savings_pct}% potential reduction - {recommendation}")
-
-        return MCPResponse(status=MCPToolStatus.SUCCESS, data=stats)
-
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return await _log_and_return_error(
             ctx, f"Toon analysis failed: {e}", remediation="Ensure data is JSON-serializable"
         )

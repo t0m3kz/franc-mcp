@@ -52,7 +52,7 @@ async def test_create_datacenter_deployment():
 
         # FastMCP may wrap structured output in a Root/MCPResponse model.
         raw = response.data
-        if hasattr(raw, "data") and isinstance(getattr(raw, "data"), dict):
+        if hasattr(raw, "data") and isinstance(raw.data, dict):
             data = raw.data  # Unwrap MCPResponse
         else:
             data = raw  # Already a dict

@@ -5,15 +5,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastmcp import Context
 
-from franc.tools.toon import toon_analyze as toon_analyze_tool
-from franc.tools.toon import toon_decode as toon_decode_tool
-from franc.tools.toon import toon_encode as toon_encode_tool
+from franc.tools.toon import toon_analyze, toon_decode, toon_encode
 from franc.utils import MCPToolStatus
-
-# Extract the underlying functions from the FunctionTool objects
-toon_encode = toon_encode_tool.fn
-toon_decode = toon_decode_tool.fn
-toon_analyze = toon_analyze_tool.fn
 
 
 @pytest.fixture
@@ -34,6 +27,7 @@ async def test_toon_encode_simple_dict(mock_context: Context):
     result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
 
     assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
     assert "toon_encoded" in result.data
     assert "statistics" in result.data
     assert result.data["statistics"]["savings_percent"] >= 0
@@ -47,6 +41,7 @@ async def test_toon_encode_list_of_dicts(mock_context: Context):
     result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
 
     assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
     assert result.data["statistics"]["savings_percent"] > 20  # Should have good compression
 
 
@@ -58,6 +53,7 @@ async def test_toon_encode_without_stats(mock_context: Context):
     result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
 
     assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
     assert "toon_encoded" in result.data
     assert "statistics" not in result.data
 
@@ -67,15 +63,14 @@ async def test_toon_decode_simple(mock_context: Context):
     """Test decoding toon-encoded data."""
     original_data = {"name": "test", "value": 42}
 
-    # First encode
     encode_result = await toon_encode(ctx=mock_context, data=original_data, show_stats=False)
-
+    assert encode_result.data is not None
     toon_string = encode_result.data["toon_encoded"]
 
-    # Then decode
     decode_result = await toon_decode(ctx=mock_context, toon_string=toon_string)
 
     assert decode_result.status == MCPToolStatus.SUCCESS
+    assert decode_result.data is not None
     assert decode_result.data["decoded"] == original_data
 
 
@@ -105,13 +100,13 @@ async def test_toon_roundtrip_complex_data(mock_context: Context):
         "threshold": 0.95,
     }
 
-    # Encode
     encode_result = await toon_encode(ctx=mock_context, data=original_data, show_stats=False)
+    assert encode_result.data is not None
 
-    # Decode
     decode_result = await toon_decode(ctx=mock_context, toon_string=encode_result.data["toon_encoded"])
 
     assert decode_result.status == MCPToolStatus.SUCCESS
+    assert decode_result.data is not None
     assert decode_result.data["decoded"] == original_data
 
 
@@ -123,8 +118,7 @@ async def test_toon_analyze_small_data(mock_context: Context):
     result = await toon_analyze(ctx=mock_context, data=data)
 
     assert result.status == MCPToolStatus.SUCCESS
-    assert "json_length" in result.data
-    assert "toon_length" in result.data
+    assert result.data is not None
     assert "savings_percent" in result.data
     assert "recommendation" in result.data
 
@@ -137,6 +131,7 @@ async def test_toon_analyze_large_repetitive_data(mock_context: Context):
     result = await toon_analyze(ctx=mock_context, data=data)
 
     assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
     assert result.data["savings_percent"] > 30  # Should show significant savings
     assert (
         "strongly recommend" in result.data["recommendation"].lower()
@@ -152,20 +147,20 @@ async def test_toon_encode_primitives(mock_context: Context):
     for data in test_cases:
         result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
         assert result.status == MCPToolStatus.SUCCESS
+        assert result.data is not None
 
-        # Verify roundtrip
         decode_result = await toon_decode(ctx=mock_context, toon_string=result.data["toon_encoded"])
+        assert decode_result.data is not None
         assert decode_result.data["decoded"] == data
 
 
 @pytest.mark.asyncio
 async def test_toon_decode_valid_toon(mock_context: Context):
     """Test decoding a valid TOON string."""
-    # The toons.loads parser is designed to be lenient and handles most input gracefully
-    # Test with a proper TOON format
     result = await toon_decode(ctx=mock_context, toon_string="name: Alice\nage: 30")
 
     assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
     assert result.data["decoded"] == {"name": "Alice", "age": 30}
 
 
@@ -192,36 +187,35 @@ async def test_toon_encode_realistic_infrahub_data(mock_context: Context):
     result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
 
     assert result.status == MCPToolStatus.SUCCESS
-    # Nested objects don't compress as well as flat tabular data, but should show some savings
-    assert result.data["statistics"]["savings_percent"] >= 0  # Any positive savings is good
+    assert result.data is not None
+    assert result.data["statistics"]["savings_percent"] >= 0
 
 
 @pytest.mark.asyncio
 async def test_toon_statistics_accuracy(mock_context: Context):
     """Test that statistics accurately reflect compression."""
-    data = {"a" * 100: "b" * 100}  # Repetitive data
+    data = {"a" * 100: "b" * 100}
 
     result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
 
+    assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
     stats = result.data["statistics"]
 
-    # Verify math - now based on actual tokens, not characters
     expected_savings = ((stats["json_tokens"] - stats["toon_tokens"]) / stats["json_tokens"]) * 100
     assert abs(stats["savings_percent"] - expected_savings) < 0.1
-
-    # Verify token savings
-    tokens_saved = stats["json_tokens"] - stats["toon_tokens"]
-    assert tokens_saved > 0
+    assert stats["json_tokens"] - stats["toon_tokens"] > 0
 
 
 @pytest.mark.asyncio
 async def test_toon_analyze_recommendation_low_savings(mock_context: Context):
     """Test recommendation for low savings data."""
-    data = {"x": 1}  # Very small, minimal savings
+    data = {"x": 1}
 
     result = await toon_analyze(ctx=mock_context, data=data)
 
-    # Small data typically has low or negative savings
+    assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
     if result.data["savings_percent"] < 20:
         assert (
             "low savings" in result.data["recommendation"].lower()
@@ -232,11 +226,7 @@ async def test_toon_analyze_recommendation_low_savings(mock_context: Context):
 @pytest.mark.asyncio
 async def test_toon_encode_empty_structures(mock_context: Context):
     """Test encoding empty data structures."""
-    test_cases = [
-        {},
-        [],
-        "",
-    ]
+    test_cases: list = [{}, [], ""]
 
     for data in test_cases:
         result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
@@ -259,12 +249,8 @@ async def test_toon_encode_mixed_types(mock_context: Context):
     result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
 
     assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
 
-    # Verify roundtrip
     decode_result = await toon_decode(ctx=mock_context, toon_string=result.data["toon_encoded"])
-    assert decode_result.data["decoded"] == data
-    assert result.status == MCPToolStatus.SUCCESS
-
-    # Verify roundtrip
-    decode_result = await toon_decode(ctx=mock_context, toon_string=result.data["toon_encoded"])
+    assert decode_result.data is not None
     assert decode_result.data["decoded"] == data

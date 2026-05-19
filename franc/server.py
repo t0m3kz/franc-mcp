@@ -1,8 +1,9 @@
 import logging
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncIterator
+from typing import Any
 
 from fastmcp import FastMCP
 
@@ -45,10 +46,11 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[ApplicationContext]:
          - INFRAHUB_ADDRESS (default http://localhost:8000)
          - INFRAHUB_API_TOKEN (optional, but required for branch create)
     """
-    client = getattr(server, "test_client", None)
+    franc_server = server if isinstance(server, FrancFastMCP) else None
+    client = franc_server.test_client if franc_server is not None else None
     # Consume injected test client only once to avoid cross-test leakage.
-    if client is not None:
-        setattr(server, "test_client", None)
+    if client is not None and franc_server is not None:
+        franc_server.test_client = None
 
     if client is None:
         address = os.getenv("INFRAHUB_ADDRESS", "http://localhost:8000")

@@ -1,6 +1,7 @@
+import json
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import tiktoken
 import toons
@@ -8,15 +9,18 @@ from fastmcp import Context
 from infrahub_sdk.node import Attribute, InfrahubNode, RelatedNode, RelationshipManager
 from pydantic import BaseModel
 
+_TIKTOKEN_ENCODER = tiktoken.get_encoding("cl100k_base")
+
 CURRENT_DIRECTORY = Path(__file__).parent.resolve()
 PROMPTS_DIRECTORY = CURRENT_DIRECTORY / "prompts"
 
-# Simple in-memory cache for schema metadata
-# Key: (branch, kind) -> schema data
+# SDK object cache: (branch, kind) -> InfrahubNode schema object (used by nodes tools)
 _SCHEMA_CACHE: dict[tuple[str | None, str], Any] = {}
 
-# Cache for schema mappings
-# Key: branch -> mapping dict
+# Serialized dict cache: (branch, kind) -> model_dump() dict (used by get_schema tool)
+_SCHEMA_DICT_CACHE: dict[tuple[str | None, str], dict[str, Any]] = {}
+
+# Mapping cache: branch -> {kind: label}
 _SCHEMA_MAPPING_CACHE: dict[str | None, dict[str, str]] = {}
 
 
@@ -30,9 +34,9 @@ class MCPToolStatus(Enum):
 
 class MCPResponse(BaseModel, Generic[T]):
     status: MCPToolStatus
-    data: Optional[T] = None
-    error: Optional[str] = None
-    remediation: Optional[str] = None
+    data: T | None = None
+    error: str | None = None
+    remediation: str | None = None
 
 
 if TYPE_CHECKING:
@@ -92,7 +96,7 @@ def require_client(ctx: Context) -> "InfrahubClient":
         from franc import server as franc_server  # Lazy import to avoid circular dependency
 
         module_test_client = getattr(getattr(franc_server, "mcp", None), "test_client", None)
-    except Exception:  # pragma: no cover - defensive guard for import-time issues
+    except Exception:  # noqa: BLE001  # pragma: no cover - defensive guard for import-time issues
         module_test_client = None
     if module_test_client is not None:
         return module_test_client
@@ -106,22 +110,22 @@ def require_client(ctx: Context) -> "InfrahubClient":
     return client
 
 
-async def convert_node_to_dict(*, obj: InfrahubNode, branch: str | None, include_id: bool = True) -> dict[str, Any]:  # noqa: C901
+async def convert_node_to_dict(*, obj: InfrahubNode, branch: str | None, include_id: bool = True) -> dict[str, Any]:
     data = {}
 
     if include_id:
         data["index"] = obj.id or None
 
-    for attr_name in obj._schema.attribute_names:  # noqa: SLF001
+    for attr_name in obj._schema.attribute_names:
         attr: Attribute = getattr(obj, attr_name)
         data[attr_name] = str(attr.value)
 
-    for rel_name in obj._schema.relationship_names:  # noqa: SLF001
+    for rel_name in obj._schema.relationship_names:
         rel = getattr(obj, rel_name)
         if rel and isinstance(rel, RelatedNode):
             if not rel.initialized:
                 await rel.fetch()
-            related_node = obj._client.store.get(  # noqa: SLF001
+            related_node = obj._client.store.get(
                 branch=branch,
                 key=rel.peer.id,
                 raise_when_missing=False,
@@ -187,42 +191,27 @@ def decode_from_toon(encoded: str) -> Any:
     return toons.loads(encoded)  # type: ignore[attr-defined]
 
 
-def estimate_token_savings(data: Any) -> dict[str, Any]:
+def estimate_token_savings(data: Any) -> tuple[dict[str, Any], str]:
     """
-    Calculate actual token savings from using toon encoding vs JSON.
-
-    Uses tiktoken (cl100k_base encoding for GPT-4) to measure real token counts.
-
-    Args:
-        data: Python object to analyze
+    Calculate token savings from TOON vs JSON and return the encoded TOON string.
 
     Returns:
-        Dict with json_tokens, toon_tokens, json_length, toon_length, savings_percent
+        (stats_dict, toon_str) — stats has json_tokens, toon_tokens, savings_percent;
+        toon_str is reusable so callers avoid a second toons.dumps() call.
     """
-    import json
-
     json_str = json.dumps(data)
     toon_str = toons.dumps(data)  # type: ignore[attr-defined]
 
-    # Get actual token counts using GPT-4 tokenizer
-    enc = tiktoken.get_encoding("cl100k_base")
-    json_tokens = len(enc.encode(json_str))
-    toon_tokens = len(enc.encode(toon_str))
-
-    # Also include character lengths for reference
-    json_len = len(json_str)
-    toon_len = len(toon_str)
-
-    # Calculate savings based on actual tokens
+    json_tokens = len(_TIKTOKEN_ENCODER.encode(json_str))
+    toon_tokens = len(_TIKTOKEN_ENCODER.encode(toon_str))
     savings = ((json_tokens - toon_tokens) / json_tokens * 100) if json_tokens > 0 else 0
 
-    return {
+    stats = {
         "json_tokens": json_tokens,
         "toon_tokens": toon_tokens,
-        "json_length": json_len,
-        "toon_length": toon_len,
         "savings_percent": round(savings, 1),
     }
+    return stats, toon_str
 
 
 def get_cached_schema(branch: str | None, kind: str) -> Any | None:
@@ -245,7 +234,45 @@ def cache_schema_mapping(branch: str | None, mapping: dict[str, str]) -> None:
     _SCHEMA_MAPPING_CACHE[branch] = mapping
 
 
+def get_cached_schema_dict(branch: str | None, kind: str) -> dict[str, Any] | None:
+    """Retrieve cached serialized schema dict (model_dump output) if available."""
+    return _SCHEMA_DICT_CACHE.get((branch, kind))
+
+
+def cache_schema_dict(branch: str | None, kind: str, schema_dict: dict[str, Any]) -> None:
+    """Cache serialized schema dict to reduce redundant fetches."""
+    _SCHEMA_DICT_CACHE[(branch, kind)] = schema_dict
+
+
 def clear_schema_cache() -> None:
     """Clear all cached schema data. Useful for testing or when schemas change."""
     _SCHEMA_CACHE.clear()
+    _SCHEMA_DICT_CACHE.clear()
     _SCHEMA_MAPPING_CACHE.clear()
+
+
+async def maybe_compress(
+    ctx: Context,
+    data: Any,
+    kind_label: str,
+    data_key: str,
+) -> "MCPResponse | None":
+    """Return a compressed MCPResponse if data exceeds the auto-compress threshold, else None.
+
+    Callers should do:
+        return await maybe_compress(...) or MCPResponse(status=SUCCESS, data=data)
+    """
+    from franc.constants import TOON_AUTO_THRESHOLD_ITEMS  # avoid circular at import time
+
+    if len(data) <= TOON_AUTO_THRESHOLD_ITEMS:
+        return None
+
+    stats, toon_str = estimate_token_savings(data)
+    await ctx.info(
+        f"Auto-compressing {len(data)} {kind_label} with TOON "
+        f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
+    )
+    return MCPResponse(
+        status=MCPToolStatus.SUCCESS,
+        data={data_key: toon_str, "count": len(data)},
+    )

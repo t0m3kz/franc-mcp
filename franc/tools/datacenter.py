@@ -108,12 +108,12 @@ async def _resolve_design_pattern_id(client: Any, design_name: str, branch: str 
         design_schema = (
             await design_schema_result if inspect.isawaitable(design_schema_result) else design_schema_result
         )
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
     try:
         designs_result = filters_api(kind=design_schema.kind, branch=branch, name__value=design_name, parallel=True)
         designs = await designs_result if inspect.isawaitable(designs_result) else designs_result
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
     if not isinstance(designs, (list, tuple)) or not designs:
         return None
@@ -128,7 +128,7 @@ async def _strategy_choices(client: Any, branch: str | None) -> list[str]:
     try:
         schema_result = schema_api.get(kind=TOPOLOGY_DC_KIND, branch=branch)
         schema = await schema_result if inspect.isawaitable(schema_result) else schema_result
-    except Exception:
+    except Exception:  # noqa: BLE001
         return []
     return _get_choice_names(schema, "strategy")
 
@@ -140,12 +140,12 @@ async def _design_choices(client: Any, branch: str | None) -> list[str]:
     try:
         schema_result = schema_api.get(kind=TOPOLOGY_DC_DESIGN_KIND, branch=branch)
         schema = await schema_result if inspect.isawaitable(schema_result) else schema_result
-    except Exception:
+    except Exception:  # noqa: BLE001
         return []
     try:
         design_nodes_result = client.all(kind=schema.kind, branch=branch)
         design_nodes = await design_nodes_result if inspect.isawaitable(design_nodes_result) else design_nodes_result
-    except Exception:
+    except Exception:  # noqa: BLE001
         return []
     names: list[str] = []
     for node in design_nodes:
@@ -211,7 +211,7 @@ async def discover_datacenter_options(
             label = getattr(node, "display_label", None) or getattr(node, "name", None)
             if label:
                 designs.add(str(label))
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
 
     # Attempt to discover LocationBuilding objects (schema kind may vary across deployments).
@@ -221,7 +221,7 @@ async def discover_datacenter_options(
         try:
             schema_result = client.schema.get(kind=lk, branch=branch)
             schema = await schema_result if inspect.isawaitable(schema_result) else schema_result
-        except Exception:
+        except Exception:  # noqa: BLE001, S112
             continue
         try:
             loc_nodes_result = client.all(kind=schema.kind, branch=branch)
@@ -231,7 +231,7 @@ async def discover_datacenter_options(
                 label = getattr(node, "display_label", None) or getattr(node, "name", None)
                 if label:
                     locations.add(str(label))
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     # Discover existing TopologyDataCenter designs / strategies / providers
@@ -240,7 +240,7 @@ async def discover_datacenter_options(
         try:
             schema_result = client.schema.get(kind=tk, branch=branch)
             schema = await schema_result if inspect.isawaitable(schema_result) else schema_result
-        except Exception:
+        except Exception:  # noqa: BLE001, S112
             continue
         try:
             topo_nodes_result = client.all(kind=schema.kind, branch=branch)
@@ -259,7 +259,7 @@ async def discover_datacenter_options(
                             providers.add(raw)
                         elif attr_name == "location" and raw:
                             locations.add(raw)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     # Provide baseline static options if discovery empty
@@ -334,7 +334,7 @@ async def create_datacenter_deployment(
     try:
         dc_schema_result = client.schema.get(kind=TOPOLOGY_DC_KIND, branch=branch_name)
         dc_schema = await dc_schema_result if inspect.isawaitable(dc_schema_result) else dc_schema_result
-    except Exception:
+    except Exception:  # noqa: BLE001
         await ctx.debug("TopologyDataCenter schema not available; falling back to static defaults.")
     strategy_choices = await _strategy_choices(client, branch_name) or []
     # Union schema choices with defaults to accept newer strategies even if schema lags

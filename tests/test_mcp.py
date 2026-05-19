@@ -27,7 +27,7 @@ async def test_list_schema(client, add_mock_response, httpx_mock):
     )
     try:
         async with Client(mcp) as test_client:
-            response = await test_client.call_tool("list_schema_nodes")
+            response = await test_client.call_tool("get_schema_mapping")
             data = _unwrap(response)
             assert isinstance(data, dict)
             assert data.get("IpamPrefix") == "Prefix"
@@ -83,7 +83,7 @@ async def test_get_node_filters(client, add_mock_response, httpx_mock):
 
 
 @pytest.mark.asyncio
-async def test_get_objects(client, add_mock_response, httpx_mock):
+async def test_get_nodes_compressed(client, add_mock_response, httpx_mock):
     mcp.test_client = client
     add_mock_response(
         httpx_mock,
@@ -97,22 +97,22 @@ async def test_get_objects(client, add_mock_response, httpx_mock):
         mockname="physical_devices.json",
         method="POST",
         url="http://localhost:8000/graphql/main",
+        is_reusable=True,
     )
     try:
         async with Client(mcp) as client_session:
-            devices = await client_session.call_tool("get_objects", {"kind": "DcimPhysicalDevice"})
+            devices = await client_session.call_tool("get_nodes", {"kind": "DcimPhysicalDevice"})
             data = _unwrap(devices)
 
             # With >10 items, result is auto-compressed
             assert isinstance(data, dict)
-            assert "objects_toon" in data
+            assert "nodes_toon" in data
             assert data["count"] == 12
-            assert "compression_stats" in data
 
             # Decode to verify content
             from franc.utils import decode_from_toon
 
-            decoded = decode_from_toon(data["objects_toon"])
+            decoded = decode_from_toon(data["nodes_toon"])
             assert isinstance(decoded, list)
             assert "ktw-1-oob-02" in decoded
             assert len(decoded) == 12

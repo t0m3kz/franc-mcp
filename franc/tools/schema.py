@@ -5,17 +5,16 @@ from infrahub_sdk.exceptions import BranchNotFoundError, SchemaNotFoundError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from franc.constants import NAMESPACES_INTERNAL, TOON_AUTO_THRESHOLD_ITEMS
+from franc.constants import NAMESPACES_INTERNAL
 from franc.utils import (
     MCPResponse,
     MCPToolStatus,
     _log_and_return_error,
-    cache_schema,
+    cache_schema_dict,
     cache_schema_mapping,
-    encode_with_toon,
-    estimate_token_savings,
-    get_cached_schema,
+    get_cached_schema_dict,
     get_cached_schema_mapping,
+    maybe_compress,
     require_client,
 )
 
@@ -44,25 +43,7 @@ async def get_schema_mapping(
     # Check cache first
     cached_mapping = get_cached_schema_mapping(branch)
     if cached_mapping:
-        await ctx.info(f"Using cached schema mapping for branch '{branch or 'main'}'")
-
-        # Auto-compression for results with >10 items
-        if len(cached_mapping) > TOON_AUTO_THRESHOLD_ITEMS:
-            stats = estimate_token_savings(cached_mapping)
-            await ctx.info(
-                f"Auto-compressing {len(cached_mapping)} schema mappings with TOON "
-                f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
-            )
-            return MCPResponse(
-                status=MCPToolStatus.SUCCESS,
-                data={
-                    "schema_mapping_toon": encode_with_toon(cached_mapping),
-                    "count": len(cached_mapping),
-                    "compression_stats": stats,
-                    "_note": "Result auto-compressed with TOON. Use toon_decode to expand if needed.",
-                },
-            )
-        return MCPResponse(
+        return await maybe_compress(ctx, cached_mapping, "schema mappings", "schema_mapping_toon") or MCPResponse(
             status=MCPToolStatus.SUCCESS,
             data=cached_mapping,
         )
@@ -73,11 +54,6 @@ async def get_schema_mapping(
         return await _log_and_return_error(
             ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
         )
-    if branch:
-        await ctx.info(f"Fetching schema mapping for {branch} from Infrahub...")
-    else:
-        await ctx.info("Fetching schema mapping from Infrahub...")
-
     try:
         all_schemas = await client.schema.all(branch=branch)
     except BranchNotFoundError as exc:
@@ -90,26 +66,8 @@ async def get_schema_mapping(
 
     # Cache the result
     cache_schema_mapping(branch, schema_mapping)
-    await ctx.debug(f"Cached schema mapping for branch '{branch or 'main'}'")
 
-    # Auto-compression for results with >10 items
-    if len(schema_mapping) > TOON_AUTO_THRESHOLD_ITEMS:
-        stats = estimate_token_savings(schema_mapping)
-        await ctx.info(
-            f"Auto-compressing {len(schema_mapping)} schema mappings with TOON "
-            f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
-        )
-        return MCPResponse(
-            status=MCPToolStatus.SUCCESS,
-            data={
-                "schema_mapping_toon": encode_with_toon(schema_mapping),
-                "count": len(schema_mapping),
-                "compression_stats": stats,
-                "_note": "Result auto-compressed with TOON. Use toon_decode to expand if needed.",
-            },
-        )
-
-    return MCPResponse(
+    return await maybe_compress(ctx, schema_mapping, "schema mappings", "schema_mapping_toon") or MCPResponse(
         status=MCPToolStatus.SUCCESS,
         data=schema_mapping,
     )
@@ -134,14 +92,9 @@ async def get_schema(
     Returns:
         Dictionary with success status and schema.
     """
-    # Check cache first
-    cached_schema = get_cached_schema(branch, kind)
-    if cached_schema:
-        await ctx.info(f"Using cached schema for {kind} (branch '{branch or 'main'}')")
-        return MCPResponse(
-            status=MCPToolStatus.SUCCESS,
-            data=cached_schema,
-        )
+    cached = get_cached_schema_dict(branch, kind)
+    if cached is not None:
+        return MCPResponse(status=MCPToolStatus.SUCCESS, data=cached)
 
     try:
         client: InfrahubClient = require_client(ctx)
@@ -149,8 +102,6 @@ async def get_schema(
         return await _log_and_return_error(
             ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
         )
-    await ctx.info(f"Fetching schema of {kind} from Infrahub...")
-
     try:
         schema = await client.schema.get(kind=kind, branch=branch)
     except SchemaNotFoundError:
@@ -161,15 +112,9 @@ async def get_schema(
         return await _log_and_return_error(ctx=ctx, error=exc, remediation="Check the branch name or your permissions.")
 
     schema_dict = schema.model_dump()
+    cache_schema_dict(branch, kind, schema_dict)
 
-    # Cache the result
-    cache_schema(branch, kind, schema_dict)
-    await ctx.debug(f"Cached schema for {kind} (branch '{branch or 'main'}')")
-
-    return MCPResponse(
-        status=MCPToolStatus.SUCCESS,
-        data=schema_dict,
-    )
+    return MCPResponse(status=MCPToolStatus.SUCCESS, data=schema_dict)
 
 
 @mcp.tool(tags={"schemas", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
@@ -204,8 +149,6 @@ async def get_schemas(
         return await _log_and_return_error(
             ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
         )
-    await ctx.info(f"Fetching all schemas in branch {branch or 'main'} from Infrahub...")
-
     try:
         all_schemas = await client.schema.all(branch=branch)
     except BranchNotFoundError as exc:
@@ -220,24 +163,7 @@ async def get_schemas(
             continue
         filtered_schemas[kind] = schema.model_dump()
 
-    # Auto-compression for results with >10 items
-    if len(filtered_schemas) > TOON_AUTO_THRESHOLD_ITEMS:
-        stats = estimate_token_savings(filtered_schemas)
-        await ctx.info(
-            f"Auto-compressing {len(filtered_schemas)} full schemas with TOON "
-            f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
-        )
-        return MCPResponse(
-            status=MCPToolStatus.SUCCESS,
-            data={
-                "schemas_toon": encode_with_toon(filtered_schemas),
-                "count": len(filtered_schemas),
-                "compression_stats": stats,
-                "_note": "Result auto-compressed with TOON. Use toon_decode to expand if needed.",
-            },
-        )
-
-    return MCPResponse(
+    return await maybe_compress(ctx, filtered_schemas, "full schemas", "schemas_toon") or MCPResponse(
         status=MCPToolStatus.SUCCESS,
         data=filtered_schemas,
     )
@@ -276,30 +202,3 @@ async def get_required_fields(ctx: Context, kind: str) -> MCPResponse[list[str]]
     required_fields += [rel.name for rel in rels if not getattr(rel, "optional", True)]
     return MCPResponse(status=MCPToolStatus.SUCCESS, data=required_fields)
 
-
-# Compatibility tool for existing tests expecting 'list_schema_nodes'
-@mcp.tool(tags={"schemas", "list"}, annotations=ToolAnnotations(readOnlyHint=True))
-async def list_schema_nodes(ctx: Context) -> MCPResponse[dict[str, str]]:
-    """
-    List all available schema nodes (object kinds) in Infrahub.
-
-    Returns:
-        MCPResponse.data => { kind_name: display_label }
-
-    Notes:
-        - Wrapper added to maintain backward compatibility with older test suite.
-        - Filters out internal namespaces defined in NAMESPACES_INTERNAL.
-    """
-    try:
-        client: InfrahubClient = require_client(ctx)
-    except RuntimeError as exc:
-        return await _log_and_return_error(
-            ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
-        )
-    all_schemas = await client.schema.all(branch="main")
-    mapping = {
-        kind: (schema.label or "")
-        for kind, schema in all_schemas.items()
-        if schema.namespace not in NAMESPACES_INTERNAL and schema.label is not None
-    }
-    return MCPResponse(status=MCPToolStatus.SUCCESS, data=mapping)
