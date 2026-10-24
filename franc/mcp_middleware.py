@@ -79,13 +79,9 @@ def _is_write(tool: Any | None) -> bool:
 
 
 def _is_read_only(tool: Any | None) -> bool:
-    """True only when the tool explicitly declares ``readOnlyHint`` (MCP SDK v2 renamed it ``read_only_hint``)."""
+    """True only when the tool explicitly declares ``read_only_hint``."""
     annotations = getattr(tool, "annotations", None)
-    if annotations is None:
-        return False
-    if hasattr(annotations, "read_only_hint"):
-        return bool(annotations.read_only_hint)
-    return bool(getattr(annotations, "readOnlyHint", False))
+    return bool(getattr(annotations, "read_only_hint", False))
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +250,7 @@ class SafeRetryMiddleware(RetryMiddleware):
     """RetryMiddleware that never retries a tool call that could write.
 
     Replaying a non-idempotent write after a timeout can apply it twice, so only tools that are explicitly
-    ``readOnlyHint`` are retried; every other request type keeps the stock retry behaviour.
+    ``read_only_hint`` are retried; every other request type keeps the stock retry behaviour.
     """
 
     async def on_request(self, context: MiddlewareContext[Any], call_next: CallNext[Any, Any]) -> Any:

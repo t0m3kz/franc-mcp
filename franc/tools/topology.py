@@ -1,5 +1,6 @@
 """Topology traversal tools — DC summary, devices, BGP, namespaces, fabric health, segments."""
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Annotated, Any
 
 from fastmcp import Context, FastMCP
@@ -48,7 +49,7 @@ _SEG_FIELDS = ["customer_name", "owner", "environment", "pbr_enabled"]
 
 @mcp.tool(
     tags={"topology", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_topology_summary(
     ctx: Context,
@@ -147,7 +148,7 @@ async def get_topology_summary(
 
 @mcp.tool(
     tags={"topology", "devices", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_topology_devices(
     ctx: Context,
@@ -262,7 +263,7 @@ async def get_topology_devices(
 
 @mcp.tool(
     tags={"topology", "bgp", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_bgp_sessions(
     ctx: Context,
@@ -329,7 +330,7 @@ async def get_bgp_sessions(
 
 @mcp.tool(
     tags={"topology", "namespaces", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_tenant_namespaces(
     ctx: Context,
@@ -377,7 +378,7 @@ async def get_tenant_namespaces(
 
 @mcp.tool(
     tags={"topology", "health", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_fabric_health(
     ctx: Context,
@@ -504,7 +505,7 @@ async def get_fabric_health(
 
 @mcp.tool(
     tags={"topology", "segments", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_segment_inventory(
     ctx: Context,
@@ -692,7 +693,7 @@ def _group_devices(devices: list[dict]) -> dict[str, list[dict]]:
 
 def _generate_drawio_xml(
     dev_map: dict[str, dict],
-    edge_list: list[tuple[str, str, str]],
+    edge_list: Sequence[tuple[Any, ...]],  # (a, b, ?, iface_a, iface_b, edge_type) — trailing items optional
     datacenter: str,
 ) -> str:
     """Render datacenter topology as Draw.io XML with flat hierarchical layer layout.
@@ -912,7 +913,7 @@ def _generate_drawio_xml(
 
 @mcp.tool(
     tags={"topology", "diagram", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def generate_topology_diagram(
     ctx: Context,
@@ -1366,7 +1367,7 @@ def _bfs_paths(
 
 @mcp.tool(
     tags={"topology", "diagram", "path", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def generate_path_diagram(
     ctx: Context,
@@ -1565,7 +1566,7 @@ def _generate_containerlab_yaml(
 
 @mcp.tool(
     tags={"topology", "containerlab", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def generate_containerlab_topology(
     ctx: Context,
@@ -1697,7 +1698,7 @@ async def generate_containerlab_topology(
 
 @mcp.tool(
     tags={"topology", "cluster", "diagram", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def generate_cluster_diagram(
     ctx: Context,
@@ -1859,7 +1860,7 @@ async def generate_cluster_diagram(
 
 @mcp.tool(
     tags={"topology", "impact", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def analyze_impact(
     ctx: Context,
@@ -2071,7 +2072,7 @@ async def analyze_impact(
 
 @mcp.tool(
     tags={"topology", "firewall", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def check_firewall_placement(
     ctx: Context,
@@ -2192,7 +2193,7 @@ async def check_firewall_placement(
 
 @mcp.tool(
     tags={"topology", "firewall", "pbr", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def check_pbr_coverage(
     ctx: Context,
@@ -2313,7 +2314,7 @@ async def check_pbr_coverage(
 
 @mcp.tool(
     tags={"topology", "segment", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def check_segment_coverage(
     ctx: Context,

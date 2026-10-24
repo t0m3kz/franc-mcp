@@ -313,7 +313,7 @@ def _summarise_circuits(circuits: list[dict[str, Any]]) -> dict[str, Any]:
 
 @mcp.tool(
     tags={"bom", "inventory", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_bill_of_materials(
     ctx: Context,
@@ -492,7 +492,7 @@ async def get_bill_of_materials(
 
 @mcp.tool(
     tags={"bom", "diff", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_bom_diff(
     ctx: Context,

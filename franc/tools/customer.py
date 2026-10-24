@@ -68,7 +68,7 @@ class CustomerBoardingParams(BaseModel):
 
 @mcp.tool(
     tags={"customer", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def discover_customer_options(
     ctx: Context,
@@ -145,7 +145,7 @@ async def discover_customer_options(
 
 @mcp.tool(
     tags={"customer", "create"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=False, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=False, destructive_hint=False),
 )
 async def create_customer_boarding(
     ctx: Context,
@@ -358,7 +358,7 @@ async def create_customer_boarding(
 
 @mcp.tool(
     tags={"customer", "validate"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def validate_customer_boarding(
     ctx: Context,

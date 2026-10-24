@@ -58,7 +58,7 @@ query($branch: String!) {
 
 @mcp.tool(
     tags={"branches", "create"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=True, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=True, destructive_hint=False),
 )
 async def branch_create(
     ctx: Context,
@@ -104,7 +104,7 @@ async def branch_create(
     )
 
 
-@mcp.tool(tags={"branches", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"branches", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_branches(ctx: Context) -> MCPResponse:
     """Retrieve all branches from Infrahub."""
 
@@ -121,7 +121,7 @@ async def get_branches(ctx: Context) -> MCPResponse:
 
 @mcp.tool(
     tags={"branches", "proposed-change", "create"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=False, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=False, destructive_hint=False),
 )
 async def create_proposed_change(
     ctx: Context,
@@ -196,7 +196,7 @@ async def create_proposed_change(
 
 @mcp.tool(
     tags={"branches", "proposed-change", "artifacts", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_proposed_change_artifacts(
     ctx: Context,
@@ -296,7 +296,7 @@ async def get_proposed_change_artifacts(
 
 @mcp.tool(
     tags={"branches", "proposed-change", "diff", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_branch_diff(
     ctx: Context,
@@ -367,7 +367,7 @@ async def get_branch_diff(
 
 @mcp.tool(
     tags={"branches", "session", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_session_info(ctx: Context) -> MCPResponse[dict[str, Any]]:
     """
@@ -401,7 +401,7 @@ async def get_session_info(ctx: Context) -> MCPResponse[dict[str, Any]]:
 
 @mcp.tool(
     tags={"branches", "session", "reset"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=True, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=True, destructive_hint=False),
 )
 async def reset_session(ctx: Context) -> MCPResponse[dict[str, Any]]:
     """

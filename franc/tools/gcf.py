@@ -18,7 +18,7 @@ from franc.utils import (
 mcp: FastMCP = FastMCP(name="GCF Compression")
 
 
-@mcp.tool(tags={"gcf", "compression", "encoding"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"gcf", "compression", "encoding"}, annotations=ToolAnnotations(read_only_hint=True))
 async def gcf_encode(
     ctx: Context,
     data: Annotated[Any, Field(description="Python data structure to encode with GCF (dict, list, primitives, etc.)")],
@@ -59,7 +59,7 @@ async def gcf_encode(
         )
 
 
-@mcp.tool(tags={"gcf", "compression", "decoding"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"gcf", "compression", "decoding"}, annotations=ToolAnnotations(read_only_hint=True))
 async def gcf_decode(
     ctx: Context,
     gcf_string: Annotated[str, Field(description="GCF-encoded string to decode back to Python objects")],
@@ -88,7 +88,7 @@ async def gcf_decode(
         )
 
 
-@mcp.tool(tags={"gcf", "compression", "analysis"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"gcf", "compression", "analysis"}, annotations=ToolAnnotations(read_only_hint=True))
 async def gcf_analyze(
     ctx: Context,
     data: Annotated[Any, Field(description="Python data structure to analyze for potential compression savings")],

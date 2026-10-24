@@ -55,7 +55,7 @@ def _classify_circuit(locs: list[str]) -> str:
 
 @mcp.tool(
     tags={"interconnects", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_interconnect_summary(
     ctx: Context,
@@ -108,7 +108,7 @@ _CIRCUIT_SCOPES = ("all", "dc-colo", "office", "colo-colo", "partner")
 
 @mcp.tool(
     tags={"interconnects", "colocation", "external", "offices", "circuits", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_circuits(
     ctx: Context,
@@ -207,7 +207,7 @@ async def get_circuits(
 
 @mcp.tool(
     tags={"interconnects", "cloud", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_cloud_circuits(
     ctx: Context,
@@ -301,7 +301,7 @@ async def get_cloud_circuits(
 
 @mcp.tool(
     tags={"interconnects", "bgp", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_dci_bgp_sessions(
     ctx: Context,

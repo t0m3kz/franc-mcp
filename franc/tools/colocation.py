@@ -22,7 +22,7 @@ KIND_BUILDING = "LocationBuilding"
 
 @mcp.tool(
     tags={"colocation", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_colocation_summary(
     ctx: Context,
@@ -68,7 +68,7 @@ async def get_colocation_summary(
 
 @mcp.tool(
     tags={"colocation", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_colocation_devices(
     ctx: Context,

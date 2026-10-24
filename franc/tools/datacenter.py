@@ -159,7 +159,7 @@ async def _design_choices(client: Any, branch: str | None) -> list[str]:
 
 @mcp.tool(
     tags={"datacenter", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def discover_datacenter_options(
     ctx: Context,
@@ -245,7 +245,7 @@ async def discover_datacenter_options(
 
 @mcp.tool(
     tags={"datacenter", "create"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=False, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=False, destructive_hint=False),
 )
 async def create_datacenter_deployment(
     ctx: Context,
@@ -443,7 +443,7 @@ mutation CreateTopologyDataCenter {{
 
 @mcp.tool(
     tags={"datacenter", "validate"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def validate_datacenter_deployment(
     ctx: Context,

@@ -48,7 +48,7 @@ class AppDeploymentParams(BaseModel):
 
 @mcp.tool(
     tags={"application", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def discover_application_options(
     ctx: Context,
@@ -162,7 +162,7 @@ async def discover_application_options(
 
 @mcp.tool(
     tags={"application", "create"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=False, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=False, destructive_hint=False),
 )
 async def create_application_deployment(
     ctx: Context,
@@ -313,7 +313,7 @@ async def create_application_deployment(
 
 @mcp.tool(
     tags={"application", "validate"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def validate_application_deployment(
     ctx: Context,

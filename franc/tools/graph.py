@@ -112,7 +112,7 @@ mcp: FastMCP = FastMCP(name="Infrahub Graph Traversal")
 
 @mcp.tool(
     tags={"graph", "path", "traversal"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def find_physical_path(
     ctx: Context,
@@ -225,7 +225,7 @@ async def find_physical_path(
 
 @mcp.tool(
     tags={"graph", "impact", "traversal"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def find_reachable(
     ctx: Context,
@@ -300,7 +300,7 @@ async def find_reachable(
 
 @mcp.tool(
     tags={"graph", "segment", "traversal"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def trace_segment_to_cloud(
     ctx: Context,
@@ -512,7 +512,7 @@ def _gval(node: dict, *keys: str, default: str = "") -> str:
 
 @mcp.tool(
     tags={"graph", "neighbors", "traversal"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_device_neighbors(
     ctx: Context,
@@ -646,7 +646,7 @@ async def get_device_neighbors(
 
 @mcp.tool(
     tags={"graph", "path", "traversal", "universal"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def trace_path(
     ctx: Context,
@@ -912,7 +912,7 @@ async def trace_path(
 
 @mcp.tool(
     tags={"graph", "cypher", "raw"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=False),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=False),
 )
 async def execute_cypher(
     ctx: Context,

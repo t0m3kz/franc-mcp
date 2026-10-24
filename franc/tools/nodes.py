@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 mcp: FastMCP = FastMCP(name="Infrahub Nodes")
 
 
-@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_nodes(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
@@ -191,7 +191,7 @@ async def _total_count(
         return None
 
 
-@mcp.tool(tags={"nodes", "search", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "search", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def search_nodes(
     ctx: Context,
     query: Annotated[str, Field(min_length=1, description="Partial name to search for.")],
@@ -218,7 +218,7 @@ async def search_nodes(
     )
 
 
-@mcp.tool(tags={"nodes", "filters", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "filters", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_node_filters(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
@@ -297,7 +297,7 @@ async def get_node_filters(
     return MCPResponse(status=MCPToolStatus.SUCCESS, data=filters)
 
 
-@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_related_nodes(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
@@ -377,7 +377,7 @@ async def get_related_nodes(
     )
 
 
-@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_object_details(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the object to retrieve.")],
@@ -496,7 +496,7 @@ async def get_object_details(
     return MCPResponse(status=MCPToolStatus.SUCCESS, data=result)
 
 
-@mcp.tool(tags={"nodes", "retrieve", "batch"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve", "batch"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_objects_details(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],

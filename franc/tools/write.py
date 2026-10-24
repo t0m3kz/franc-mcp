@@ -36,7 +36,7 @@ _BLOCKED_MUTATIONS = {
 
 @mcp.tool(
     tags={"write", "upsert"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=True, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=True, destructive_hint=False),
 )
 async def node_upsert(
     ctx: Context,
@@ -138,7 +138,7 @@ async def node_upsert(
 
 @mcp.tool(
     tags={"write", "delete"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=False, destructiveHint=True),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=False, destructive_hint=True),
 )
 async def node_delete(
     ctx: Context,

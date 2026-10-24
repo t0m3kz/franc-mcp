@@ -21,7 +21,7 @@ from franc.server import mcp as franc_mcp
 from franc.traversal import NodeResolutionError, is_uuid, resolve_node_ref
 from franc.utils import _TOKEN_CLIENTS, _client_for_token, request_token
 
-READ_ANNOTATIONS = ToolAnnotations(readOnlyHint=True)
+READ_ANNOTATIONS = ToolAnnotations(read_only_hint=True)
 
 
 def _server(*middleware) -> FastMCP:

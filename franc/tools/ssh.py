@@ -91,7 +91,7 @@ async def _resolve_platform(device: Any) -> str:
 
 @mcp.tool(
     tags={"ssh", "troubleshooting", "device"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def execute_show_command(
     ctx: Context,
@@ -174,7 +174,7 @@ async def execute_show_command(
 
 @mcp.tool(
     tags={"ssh", "troubleshooting", "device", "interfaces"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_interface_status(
     ctx: Context,
@@ -221,7 +221,7 @@ async def get_interface_status(
 
 @mcp.tool(
     tags={"ssh", "troubleshooting", "device", "bgp"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_bgp_summary(
     ctx: Context,

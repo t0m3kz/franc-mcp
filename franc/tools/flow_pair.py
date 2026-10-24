@@ -30,7 +30,7 @@ mcp: FastMCP = FastMCP(name="Infrahub Flow Pair Tracing")
 
 @mcp.tool(
     tags={"flow", "application", "trace", "component"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def trace_component_to_component(
     ctx: Context,
@@ -268,7 +268,7 @@ async def trace_component_to_component(
 
 @mcp.tool(
     tags={"flow", "application", "trace", "app-to-app"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def trace_app_to_app(
     ctx: Context,

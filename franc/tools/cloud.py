@@ -29,7 +29,7 @@ KIND_VIRT_NODE_POOL = "VirtNodePool"
 
 @mcp.tool(
     tags={"cloud", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_cloud_summary(
     ctx: Context,
@@ -102,7 +102,7 @@ async def get_cloud_summary(
 
 @mcp.tool(
     tags={"cloud", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_cloud_instances(
     ctx: Context,
@@ -166,7 +166,7 @@ async def get_cloud_instances(
 
 @mcp.tool(
     tags={"cloud", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_cloud_clusters(
     ctx: Context,
@@ -237,7 +237,7 @@ async def get_cloud_clusters(
 
 @mcp.tool(
     tags={"cloud", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_cloud_connectivity(
     ctx: Context,

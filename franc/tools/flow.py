@@ -53,7 +53,7 @@ query BGPSessions($device_name: String!) {
 
 @mcp.tool(
     tags={"flow", "application", "trace"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def trace_application_flow(
     ctx: Context,
@@ -327,7 +327,7 @@ query CloudNeighbors($dev_name: String!) {
 
 @mcp.tool(
     tags={"flow", "routing", "health", "trace"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def trace_routing_connections(
     ctx: Context,

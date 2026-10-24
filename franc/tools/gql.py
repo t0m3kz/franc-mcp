@@ -75,7 +75,7 @@ def _check_blocked(query: str) -> str | None:
 
 @mcp.tool(
     tags={"graphql", "query", "read"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True, destructive_hint=False),
 )
 async def query_graphql(
     ctx: Context,
@@ -136,7 +136,7 @@ async def query_graphql(
 
 @mcp.tool(
     tags={"graphql", "mutation", "write"},
-    annotations=ToolAnnotations(readOnlyHint=False, idempotentHint=False, destructiveHint=False),
+    annotations=ToolAnnotations(read_only_hint=False, idempotent_hint=False, destructive_hint=False),
 )
 async def mutate_graphql(
     ctx: Context,

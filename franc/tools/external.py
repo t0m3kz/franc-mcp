@@ -33,7 +33,7 @@ DEMO_PARTNERS = [
 
 @mcp.tool(
     tags={"external", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_external_providers(
     ctx: Context,
@@ -100,7 +100,7 @@ async def get_external_providers(
 
 @mcp.tool(
     tags={"external", "bgp", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_external_bgp_sessions(
     ctx: Context,

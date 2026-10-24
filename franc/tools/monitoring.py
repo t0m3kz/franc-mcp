@@ -32,7 +32,7 @@ _KIND_TO_CTYPE = {
 
 @mcp.tool(
     tags={"flow", "monitoring", "inventory", "path"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_path_monitoring_inventory(
     ctx: Context,

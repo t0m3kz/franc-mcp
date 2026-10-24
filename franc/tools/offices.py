@@ -30,7 +30,7 @@ DEMO_OFFICES = [
 
 @mcp.tool(
     tags={"offices", "discover"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_office_summary(
     ctx: Context,
@@ -98,7 +98,7 @@ async def get_office_summary(
 
 @mcp.tool(
     tags={"offices", "retrieve"},
-    annotations=ToolAnnotations(readOnlyHint=True, idempotentHint=True),
+    annotations=ToolAnnotations(read_only_hint=True, idempotent_hint=True),
 )
 async def get_office_devices(
     ctx: Context,

@@ -1,6 +1,6 @@
 import logging
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -99,7 +99,7 @@ class ApplicationContext:
 
 
 @asynccontextmanager
-async def app_lifespan(server: FastMCP) -> AsyncIterator[ApplicationContext]:
+async def app_lifespan(server: FastMCP) -> AsyncGenerator[ApplicationContext, None]:
     """
     Lifespan context manager providing an authenticated InfrahubClient.
 

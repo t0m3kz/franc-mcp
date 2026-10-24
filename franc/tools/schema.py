@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 mcp: FastMCP = FastMCP(name="Infrahub Schemas")
 
 
-@mcp.tool(tags={"schemas", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"schemas", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_schema_mapping(
     ctx: Context,
     branch: Annotated[
@@ -74,7 +74,7 @@ async def get_schema_mapping(
     )
 
 
-@mcp.tool(tags={"schemas", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"schemas", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_schema(
     ctx: Context,
     kind: Annotated[str, Field(description="Schema Kind to retrieve.")],
@@ -172,7 +172,7 @@ async def _expand_peers(client: "InfrahubClient", schema_dict: dict[str, Any], b
     return {**schema_dict, "relationships": expanded_rels}
 
 
-@mcp.tool(tags={"schemas", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"schemas", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_schemas(
     ctx: Context,
     branch: Annotated[
@@ -224,7 +224,7 @@ async def get_schemas(
     )
 
 
-@mcp.tool(tags={"schemas", "required"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"schemas", "required"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_required_fields(ctx: Context, kind: str) -> MCPResponse[list[str]]:
     """
     List all required attribute fields for a given kind in Infrahub, based on the schema definition.
