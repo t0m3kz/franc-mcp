@@ -6,7 +6,7 @@ from infrahub_sdk.types import Order
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from franc.constants import schema_attribute_type_mapping
+from franc.constants import DEFAULT_PAGE_SIZE, schema_attribute_type_mapping
 from franc.utils import (
     MCPResponse,
     MCPToolStatus,
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 mcp: FastMCP = FastMCP(name="Infrahub Nodes")
 
 
-@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_nodes(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
@@ -35,21 +35,34 @@ async def get_nodes(
     ],
     filters: Annotated[dict[str, Any] | None, Field(default=None, description="Dictionary of filters to apply.")],
     partial_match: Annotated[bool, Field(default=False, description="Whether to use partial matching for filters.")],
+    limit: Annotated[
+        int,
+        Field(default=DEFAULT_PAGE_SIZE, ge=-1, description="Maximum nodes to return (default 50). -1 returns all."),
+    ] = DEFAULT_PAGE_SIZE,
+    offset: Annotated[int, Field(default=0, ge=0, description="Number of results to skip, for pagination.")] = 0,
+    include_attributes: Annotated[
+        bool,
+        Field(default=False, description="Return id + attribute values per node instead of just display labels."),
+    ] = False,
 ) -> MCPResponse:
-    """Get all objects of a specific kind from Infrahub.
+    """List objects of a specific kind from Infrahub, one page at a time.
 
     To retrieve the list of available kinds, use the `get_schema_mapping` tool.
     To retrieve the list of available filters for a specific kind, use the `get_node_filters` tool.
+    To find a node by partial name only, use `search_nodes`.
 
     Parameters:
         kind: Kind of the objects to retrieve.
         branch: Branch to retrieve the objects from. Defaults to None (uses default branch).
         filters: Dictionary of filters to apply.
         partial_match: Whether to use partial matching for filters.
+        limit: Maximum nodes to return (default 50). -1 returns everything.
+        offset: Number of results to skip. Use with `has_more` to page through large kinds.
+        include_attributes: Return id and attribute values per node instead of display labels.
 
     Returns:
-        MCPResponse with success status and objects.
-
+        MCPResponse whose data holds `nodes` (or `nodes_gcf` when compressed), `count`, `total_count`,
+        `has_more`, `offset` and `limit`. `has_more` is null when the total could not be determined.
     """
     try:
         client: InfrahubClient = require_client(ctx)
@@ -74,54 +87,32 @@ async def get_nodes(
 
     # TODO: Verify if the filters are valid for the kind and guide Tool if not
 
+    page_limit = None if limit < 0 else limit
+    flt = filters or {}
+    if flt:
+        await ctx.debug(f"Applying filters: {flt} with partial_match={partial_match}")
+
+    async def _fetch(prefetch: bool) -> list[Any]:
+        return await client.filters(
+            kind=schema.kind,
+            branch=branch,
+            partial_match=partial_match,
+            parallel=page_limit is None,
+            order=Order(disable=True),
+            populate_store=True,
+            prefetch_relationships=prefetch,
+            offset=offset or None,
+            limit=page_limit,
+            **flt,
+        )
+
     try:
-        if filters:
-            await ctx.debug(f"Applying filters: {filters} with partial_match={partial_match}")
-            try:
-                nodes = await client.filters(
-                    kind=schema.kind,
-                    branch=branch,
-                    partial_match=partial_match,
-                    parallel=True,
-                    order=Order(disable=True),
-                    populate_store=True,
-                    prefetch_relationships=True,
-                    **filters,
-                )
-            except SchemaNotFoundError:
-                # Retry without prefetch if peer schemas are missing
-                await ctx.debug("Peer schema missing; retrying without prefetch_relationships")
-                nodes = await client.filters(
-                    kind=schema.kind,
-                    branch=branch,
-                    partial_match=partial_match,
-                    parallel=True,
-                    order=Order(disable=True),
-                    populate_store=True,
-                    prefetch_relationships=False,
-                    **filters,
-                )
-        else:
-            try:
-                nodes = await client.all(
-                    kind=schema.kind,
-                    branch=branch,
-                    parallel=True,
-                    order=Order(disable=True),
-                    populate_store=True,
-                    prefetch_relationships=True,
-                )
-            except SchemaNotFoundError:
-                # Retry without prefetch if peer schemas are missing
-                await ctx.debug("Peer schema missing; retrying without prefetch_relationships")
-                nodes = await client.all(
-                    kind=schema.kind,
-                    branch=branch,
-                    parallel=True,
-                    order=Order(disable=True),
-                    populate_store=True,
-                    prefetch_relationships=False,
-                )
+        try:
+            nodes = await _fetch(prefetch=True)
+        except SchemaNotFoundError:
+            # Retry without prefetch if peer schemas are missing
+            await ctx.debug("Peer schema missing; retrying without prefetch_relationships")
+            nodes = await _fetch(prefetch=False)
     except GraphQLError as exc:
         # Smart remediation: suggest checking filters or schema
         remediation = (
@@ -146,20 +137,88 @@ async def get_nodes(
             f"No {kind} objects exist in branch '{branch}'. This may be expected if the kind is newly added."
         )
 
-    # Format the response with serializable data
-    # serialized_nodes = []
-    # for node in nodes:
-    #     node_data = await convert_node_to_dict(obj=node, branch=branch)
-    #     serialized_nodes.append(node_data)
-    serialized_nodes = [obj.display_label for obj in nodes]
+    if include_attributes:
+        serialized_nodes: list[Any] = [_node_attributes(obj) for obj in nodes]
+    else:
+        serialized_nodes = [obj.display_label for obj in nodes]
 
-    return await maybe_compress(ctx, serialized_nodes, "nodes", "nodes_toon") or MCPResponse(
+    total_count = await _total_count(
+        client, kind=schema.kind, branch=branch, partial_match=partial_match, filters=flt,
+        returned=len(nodes), offset=offset, limit=page_limit,
+    )  # fmt: skip
+    has_more = None if total_count is None else offset + len(nodes) < total_count
+    page = {"total_count": total_count, "has_more": has_more, "offset": offset, "limit": limit}
+
+    compressed = await maybe_compress(ctx, serialized_nodes, "nodes", "nodes_gcf")
+    if compressed is not None and isinstance(compressed.data, dict):
+        compressed.data.update(page)
+        return compressed
+    return MCPResponse(
         status=MCPToolStatus.SUCCESS,
-        data=serialized_nodes,
+        data={"nodes": serialized_nodes, "count": len(serialized_nodes), **page},
     )
 
 
-@mcp.tool(tags={"nodes", "filters", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+def _node_attributes(node: Any) -> dict[str, Any]:
+    """Cheap per-node projection: id, display label and attribute values (no relationship fetches)."""
+    out: dict[str, Any] = {"id": node.id, "display_label": node.display_label}
+    for attr_name in node._schema.attribute_names:
+        out[attr_name] = extract_value(getattr(node, attr_name))
+    return out
+
+
+async def _total_count(
+    client: "InfrahubClient",
+    *,
+    kind: str,
+    branch: str | None,
+    partial_match: bool,
+    filters: dict[str, Any],
+    returned: int,
+    offset: int,
+    limit: int | None,
+) -> int | None:
+    """Total matches for a paged query; skips the extra count call when the page proves the total.
+
+    A short page proves it (offset + returned) — except an empty page past offset 0, where the offset may
+    simply overshoot the end, so the real total has to be counted.
+    """
+    if limit is None or (returned < limit and (returned > 0 or offset == 0)):
+        return offset + returned
+    try:
+        return await client.count(kind=kind, branch=branch, partial_match=partial_match, **filters)
+    except Exception:  # noqa: BLE001  # count is best-effort — pagination must not fail the read
+        return None
+
+
+@mcp.tool(tags={"nodes", "search", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
+async def search_nodes(
+    ctx: Context,
+    query: Annotated[str, Field(min_length=1, description="Partial name to search for.")],
+    kind: Annotated[str, Field(description="Kind to search within.")],
+    branch: Annotated[str | None, Field(default=None, description="Branch to search (defaults to main).")] = None,
+    limit: Annotated[int, Field(default=10, ge=1, le=100, description="Maximum results (1-100).")] = 10,
+) -> MCPResponse:
+    """Find nodes of a kind by partial name (substring match on the `name` attribute only).
+
+    For other attributes or combined filters use `get_nodes` with `partial_match=True`.
+
+    Returns:
+        Same shape as `get_nodes`: `nodes`, `count`, `total_count`, `has_more`, `offset`, `limit`.
+    """
+    return await get_nodes(
+        ctx=ctx,
+        kind=kind,
+        branch=branch,
+        filters={"name__value": query},
+        partial_match=True,
+        limit=limit,
+        offset=0,
+        include_attributes=False,
+    )
+
+
+@mcp.tool(tags={"nodes", "filters", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_node_filters(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
@@ -238,7 +297,7 @@ async def get_node_filters(
     return MCPResponse(status=MCPToolStatus.SUCCESS, data=filters)
 
 
-@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_related_nodes(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
@@ -318,8 +377,7 @@ async def get_related_nodes(
     )
 
 
-
-@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_object_details(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the object to retrieve.")],
@@ -438,7 +496,7 @@ async def get_object_details(
     return MCPResponse(status=MCPToolStatus.SUCCESS, data=result)
 
 
-@mcp.tool(tags={"nodes", "retrieve", "batch"}, annotations=ToolAnnotations(readOnlyHint=True))
+@mcp.tool(tags={"nodes", "retrieve", "batch"}, annotations=ToolAnnotations(read_only_hint=True))
 async def get_objects_details(
     ctx: Context,
     kind: Annotated[str, Field(description="Kind of the objects to retrieve.")],
@@ -559,7 +617,7 @@ async def get_objects_details(
 
         flattened_objects.append(flattened)
 
-    return await maybe_compress(ctx, flattened_objects, f"{kind} objects", "objects_details_toon") or MCPResponse(
+    return await maybe_compress(ctx, flattened_objects, f"{kind} objects", "objects_details_gcf") or MCPResponse(
         status=MCPToolStatus.SUCCESS,
         data=flattened_objects,
     )

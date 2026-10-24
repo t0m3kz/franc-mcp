@@ -2,64 +2,233 @@
 
 This guide keeps all automation agents aligned on workflow, quality gates, and prompting practices for this repo.
 
-## Default Workflow
+## Who is Franc?
 
-- Clarify intent and safety: restate the user goal, confirm target branch and any destructive actions before proceeding.
-- Discover before acting: use `get_schema_mapping` to list kinds, `get_node_filters` for filter keys, then `get_nodes`/`get_object_details`/`get_related_nodes` as needed.
-- Validate inputs: ensure required filters (IDs/HFIDs/names) exist before tool calls; return remediation via `_log_and_return_error` when inputs are incomplete.
-- Minimize calls: favor existing store data and include lists only when required; prefer display labels and fall back to IDs.
-- **Handle auto-compressed results**: Results with >10 items are automatically compressed with TOON format. Look for `*_toon` fields (e.g., `nodes_toon`, `objects_toon`) in responses. These contain the full data in TOON format - you can work with them directly for summaries or pass to other tools. Only use `toon_decode` if you need to inspect specific values.
-- Log clearly: use `ctx.info` for progress, `ctx.debug` for details, and include actionable remediation text on failures.
-- Use defaults consistently: default `branch` to `main` when not provided; never guess kinds or filter names.
-- Refuse to invent data: if a filter/key/value is missing, return remediation that asks for it instead of improvising.
-- Keep results lean: prefer summaries with optional details sections; avoid returning unbounded lists unless the user asked for them.
+Franc is a brilliantly sarcastic MCP server — competent, dry, and mildly judgmental about your life choices.
+In English: witty and sharp. In Polish: switches to "synu" (son) and dispenses fatherly wisdom
+("Synu, zawsze sprawdzaj branch zanim coś zepsujesz.").
+Tool output is always clean and factual. The personality lives in conversational messages and `ctx.info` logs.
+
+---
+
+## Supported Workflows
+
+### 1. Schema & Node Discovery
+
+Use these tools first. Every other workflow depends on them.
+
+- `get_schema_mapping` → list all kinds
+- `get_schema(kind, expand?)` → full schema with attributes and relationships. `expand=true` inlines one
+  level of each relationship's peer schema, and for generic peers lists `used_by` — the concrete kinds a
+  relationship may point at. Use it to answer "what can this relationship be connected to?"
+- `get_node_filters(kind)` → available filter keys
+- `get_nodes(kind, filters?, limit?, offset?, include_attributes?)` → one page (default 50). Read `has_more`
+  and `total_count`; page with `offset` instead of asking for everything (`limit=-1` is the escape hatch)
+- `search_nodes(query, kind)` → substring match on `name` only; use `get_nodes(partial_match=true)` otherwise
+- `get_required_fields(kind)` → required fields before creating
+
+### 2. Data Center Deployment
+
+See `franc/prompts/datacenter_flow.md` for the full script.
+
+Short path:
+
+1. `discover_datacenter_options()` — get metros, designs, strategies, providers
+2. Collect: `site_name`, `metro_location`, `design`, `strategy`, `provider`
+3. `create_datacenter_deployment(...)` — creates branch + TopologyDataCenter
+4. `validate_datacenter_deployment(branch, site_name)` — verify
+
+### 3. Topology Inspection
+
+Use after a DC exists to understand its structure:
+
+- `get_topology_summary(datacenter?)` — DC/pod/device/namespace/segment counts
+- `get_topology_devices(datacenter, role?, pod_index?)` — device list with roles and platforms
+- `get_bgp_sessions(datacenter?, device_name?, session_type?)` — BGP peering inventory
+- `get_tenant_namespaces()` — IPAM namespace list with L3 VNI (customer deployments share the built-in "default" namespace)
+
+### 4. Customer Boarding
+
+See `franc/prompts/customer_boarding_flow.md` for the full script.
+
+Short path:
+
+1. `discover_customer_options()` — existing customers, DCs, FW types
+2. Collect: `customer_id`, `customer_name`, `datacenter`, `environment`, `firewall_type`, `segments`
+3. `create_customer_boarding(...)` — creates branch + namespace + vFW pair + VXLAN segments
+4. `validate_customer_boarding(branch, customer_id)` — verify counts
+
+### 5. Application Deployment
+
+See `franc/prompts/application_deployment_flow.md` for the full script.
+
+**Prerequisites**: customer must be boarded (namespace + segments must exist).
+
+Short path:
+
+1. `discover_application_options(customer_id?)` — portfolios, apps, segments, VMs
+2. Collect: `customer_id`, app list with labels/environments/criticalities/components
+3. `create_application_deployment(...)` — creates branch + portfolio + apps + components
+4. `validate_application_deployment(branch, customer_id)` — verify
+
+### 6. Graph Traversal (Neo4j)
+
+Path and impact tools use the SDK's server-side traversal (`InfrahubClient.traverse_paths()` /
+`reachable_nodes()`, **Infrahub ≥ 1.10**). Only `execute_cypher` talks **directly to Neo4j** (HTTP port 7474);
+it needs the docker-compose stack and env vars `NEO4J_HTTP_URL`, `NEO4J_USER`, `NEO4J_PASSWORD`.
+
+**Use cases:**
+
+- Path finding between any two devices (server → ISP edge, DC → colocation)
+- Segment-to-cloud trace: VXLAN segment → firewall (PBR) → circuits → cloud VMs
+- One-hop neighbor inspection for pre-change impact analysis
+- Raw Cypher for ad-hoc queries: orphaned interfaces, cabling audits, change impact
+
+**Tools:**
+
+- `find_physical_path(src, dst, max_hops?, all_paths?, connector_types?)` — BFS path finder
+- `trace_segment_to_cloud(segment_name, max_hops?)` — segment → FW → circuits → cloud
+- `get_device_neighbors(device_name, connector_types?)` — one-hop cable/circuit neighbors
+- `find_reachable(source, target_kinds, max_depth?, max_results?, shortest_paths_only?)` — impact/dependency
+  analysis: which nodes of the given kinds are reachable from `source` (device name, UUID, or
+  kind-qualified HFID such as `DcimPhysicalDevice__dc1-fw-01`). Prefer it over hand-written Cypher for
+  "what sits behind / depends on X?"
+- `execute_cypher(query)` — raw read-only Cypher (MATCH/RETURN only). Writes, `CALL` (apoc/dbms), `LOAD`,
+  admin keywords and `;` are refused. The connection comes from the server environment only — there is no
+  URL argument, so the Neo4j password can never be sent to a caller-chosen host. The keyword filter is a
+  backstop: point `NEO4J_USER` at a **read-only** Neo4j account
+
+**Infrahub graph model (for Cypher queries):**
+
+```
+Attributes:   (node)-[:HAS_ATTRIBUTE]->(attr {name:"field"})-[:HAS_VALUE]->(val {value:...})
+Device↔Iface: device + iface → IS_RELATED → Relationship{name:"device__interface"}
+Cables:       cable + iface  → IS_RELATED → Relationship{name:"dcimcable__dcimendpoint"}
+Circuits:     iface → IS_RELATED → Relationship{name:"physical_circuit__provider_a/z"}
+```
+
+**Critical Cypher rule:** never reuse variable names across MATCH clauses — silently collapses rows to 0.
+
+### 7. Device Troubleshooting (SSH)
+
+SSHes into a live (or emulated/containerlab) device and runs a read-only show command,
+optionally structured with ntc-templates. This is the one place franc talks to a device
+directly instead of reading Infrahub's declared state or the Neo4j graph.
+Requires env vars: `SSH_USERNAME`, `SSH_PASSWORD` (no default — set explicitly).
+Only works on devices with `primary_address` set in Infrahub.
+
+Guards (see `franc/ssh.py`):
+
+- Commands must start with the whole word `show`, `display`, `get`, `ping` or `traceroute`, contain no semicolon, ampersand,
+  backtick, `$`, `<`, `>`, backslash or newline, and may only be piped into output filters (`include`, `exclude`, `begin`,
+  `section`, `grep`, `match`, `count`, `no-more`, `display`, `json`, ...).
+- The device address must be RFC1918/ULA/loopback/link-local, because the password goes to whatever
+  `primary_address` Infrahub holds (a branch can change it). `SSH_ALLOWED_NETWORKS=<cidr,cidr>` replaces the default.
+- Host keys are not verified by default (emulated nodes change keys); set `SSH_KNOWN_HOSTS=<path>` to verify.
+
+**Use cases:**
+
+- Verify live interface/BGP state against what Infrahub declares
+- Ad-hoc troubleshooting commands not covered by a dedicated tool
+
+**Tools:**
+
+- `execute_show_command(device_name, command, branch?)` — generic escape hatch; only
+  show/display/get/ping/traceroute commands are allowed
+- `get_interface_status(device_name, interface?, branch?)` — live interface up/down/IP state
+- `get_bgp_summary(device_name, branch?)` — live BGP neighbor state (compare against
+  `get_bgp_sessions`, which reads the declared/expected topology from Infrahub instead)
+
+---
+
+## Server Configuration (MCP middleware)
+
+Cross-cutting behaviour lives in `franc/mcp_middleware.py` (FastMCP hooks, so it applies to stdio and HTTP;
+`franc/middleware.py` is the HTTP-only ASGI stack). All of it is controlled by environment variables:
+
+| Variable | Default | Effect |
+|---|---|---|
+| `FRANC_READ_ONLY` | `false` | Hide and reject every tool tagged `write` or `create`. Fail-closed for unknown tools |
+| `FRANC_AUTH_MODE` | `shared` | `token-passthrough`: each caller sends `X-INFRAHUB-KEY` or `Authorization: Bearer`; calls without a token are rejected (HTTP only) |
+| `FRANC_AUDIT` | `true` | One log line per tool call on logger `franc.audit` (tool, user, status, duration, argument *names*) |
+| `FRANC_METRICS` | `false` | Per-tool counters, Prometheus text at `GET /metrics` (unauthenticated — restrict at the network) |
+| `FRANC_OTEL` | `false` | Span per tool call; needs `opentelemetry-api` installed, exporter configured by the host |
+| `FRANC_RETRIES` | `2` | Retries on transient connection errors; **read-only tools only**, never writes. `0` disables |
+| `FRANC_MAX_RESPONSE_BYTES` | `1000000` | Oversized tool responses become an error telling the agent to narrow the query. `0` disables |
+
+**Tagging rule for new tools:** any tool that changes Infrahub state MUST carry the `write` or `create` tag, or
+read-only mode will not hide it. Read tools should set `readOnlyHint=True` so they are eligible for retry.
+
+In `token-passthrough` mode the schema caches in `franc/utils.py` are shared between callers; that is fine for
+schema (not per-user in Infrahub) but do not add per-user data to those caches.
+
+---
+
+## Default Workflow Rules
+
+- **Discover first**: use `get_schema_mapping` before queries; use `discover_*` tools before any create.
+- **Validate inputs**: check required fields with `get_required_fields`; return remediation on failures.
+- **Confirm before write**: echo the plan and get user confirmation before branch create or object create.
+- **Handle auto-compression**: results with >5 items auto-compress to GCF. Look for `*_gcf` fields.
+  Work with GCF directly for summaries. Only decode with `gcf_decode` if inspecting specific values.
+- **Fail fast with remediation**: on empty results, restate kind/branch/filters used and suggest next lookup.
+- **Use defaults**: default `branch` to `main`. Never guess kinds or filter names.
+- **Refuse invented data**: if a filter/key/value is missing, ask — never improvise VNIs, CIDRs, or hostnames.
+
+---
 
 ## Coding Standards
 
-- Python 3.10+ with type hints on all public surfaces; keep `Annotated[...]` parameter metadata accurate for tools.
-- Reuse utilities: `MCPResponse`/`MCPToolStatus` for structured returns, `_log_and_return_error` for failures, `convert_node_to_dict`/`extract_value` for serialization.
-- Handle GraphQL cleanly: catch `SchemaNotFoundError`/`GraphQLError`, guard against missing peers, and avoid broad exceptions unless returning standardized errors.
-- Keep queries bounded: avoid unfiltered bulk fetches when a key is available; disable parallelism/prefetch only when tests require specific HTTP patterns.
-- Prefer small, purposeful comments; keep line length ≤120 (ruff config).
+- Python 3.10+ with type hints on all public surfaces; keep `Annotated[...]` metadata accurate.
+- Reuse utilities: `MCPResponse`/`MCPToolStatus` for returns, `_log_and_return_error` for failures,
+  `convert_node_to_dict`/`extract_value` for serialization.
+- Handle GraphQL cleanly: catch `SchemaNotFoundError`/`GraphQLError`, guard against missing peers.
+- Keep queries bounded: avoid unfiltered bulk fetches when a key is available.
+- Use `KIND_*` constants from `franc.constants` — never hardcode kind strings in tool bodies.
+- Line length ≤ 120 (ruff config).
+
+---
 
 ## Quality Gates (run in repo root)
 
-- `uv sync` (ensure deps present)
-- `uv run ruff format .` (formatting)
-- `uv run ruff check .` (lint)
-- `uv run ty .` (type check)
-- `uv run pytest` (tests; mocks live in tests/mocks)
+```bash
+uv sync               # ensure deps
+uv run ruff format .  # format
+uv run ruff check .   # lint
+uv run ty check .           # type check
+uv run pytest         # tests (mocks in tests/mocks/)
+```
+
+---
 
 ## Collaboration Habits
 
-- Branch naming: `feature/<short-desc>` or `fix/<short-desc>`; keep commits focused and descriptive.
-- Touching prompts: store under `franc/prompts/`; keep wording concise, goal-driven, and include explicit tool order when helpful.
-- Update docs: when adding tools or changing behaviors, refresh `README.md` samples and note nuances in this file.
-- For data-center deployments, follow the prompt in `franc/prompts/datacenter_flow.md` to gather required inputs, propose defaults, and orchestrate branch + deployment tools without guessing values.
+- Branch naming: `feature/<short-desc>` or `fix/<short-desc>`; commits focused and descriptive.
+- Prompts: stored under `franc/prompts/`; concise, goal-driven, explicit tool order when helpful.
+- When adding tools: update `README.md` samples, add entry here, and note nuances.
 
-## Prompting Best Practices
+---
 
-- Instruct agents to: (1) discover schemas/filters before fetching objects, (2) confirm required fields before create/update, (3) ask before delete, (4) present remediation alongside errors.
-- Encourage concise intermediate summaries and numbered plans so downstream agents can pick up state quickly.
-- **Token optimization**: Results with >10 items are auto-compressed with TOON. Agents receive `*_toon` fields with compression stats. Work with TOON format directly for efficiency - decode only when inspecting specific values.
-- Provide example inputs/outputs when adding new tools to reduce ambiguity for other agents.
-- Add guardrails in prompts: “Use returned filter keys verbatim; do not invent fields; ask for missing filters.”
-- When requests are overly broad (e.g., unfiltered `get_nodes`), warn and suggest a narrowing filter before proceeding.
-- Echo executed parameters in `ctx.info` (kind, branch, filters) so users see what actually ran.
-- Prefer short, explicit step lists in prompts for orchestrations (ask → confirm → act), especially for multi-step flows like data-center deployment.
+## Token Optimization
 
-## Infrahub MCP quick actions (shared)
+Results with >5 items are candidates for auto-compression with GCF (threshold configurable via
+`GCF_AUTO_THRESHOLD_ITEMS`), but compression only happens when GCF actually wins on tokens.
 
-- Discover options first: run `discover_datacenter_options` to list metros, designs, strategies, providers; reuse the results during the session instead of re-asking.
-- Gather creation inputs upfront: always collect `site_name`, `metro_location`, `design`, `strategy`, `provider`; if the schema requires subnets, also collect `management_subnet`, `customer_subnet`, `technical_subnet`; keep `branch_name` and `allocate_prefix_nodes` optional.
-- Use the DC helper: prefer a single `create_datacenter_deployment` call with the collected inputs; only fall back to piecemeal node creation if the helper fails.
-- Retrieval rules: for lists, use `get_nodes`; for specific objects, use explicit filters with `get_related_nodes`/`get_node_filters`; remember naming may differ across kinds (e.g., `TopologyDataCenter` vs pods/deployments).
-- Summaries: report concise counts (pods, devices per pod), pools, racks, and status using bullets or small tables; avoid full record dumps unless requested.
-- Fail fast with remediation: when lookups return empty, restate kind/branch/filters used and suggest the next lookup (e.g., list via `get_nodes` or search by index).
+- Look for `*_gcf` fields: `nodes_gcf`, `objects_details_gcf`, `devices_gcf`, `bgp_sessions_gcf`, etc.
+- Decode only when you need specific values: `gcf_decode(gcf_string=...)`.
+- Candidates over policy: both GCF and JSON encodings are measured in tokens; a `*_gcf` field only
+  appears when GCF is strictly smaller than JSON for that data shape. Otherwise the tool returns
+  plain, uncompressed data — e.g. flat lists of short unique strings often don't compress well and
+  are left as-is.
+- Auto-compression verifies a decode round-trip before compressing; if it fails for a given
+  data shape, compression is skipped entirely rather than shipping an undecodable payload under
+  a `*_gcf` key.
+
+---
 
 ## Testing Notes
 
-- Tests rely on mocked HTTPX responses; keep call counts minimal for `get_objects`/`get_object_details` to avoid mismatch.
-- When introducing new GraphQL queries, prefer parameterized filters and ensure they align with available mock fixtures.
-- Default test command: `uv run pytest` (or `uv run pytest tests` for speed). Keep execution deterministic—avoid network calls in tests.
-- Before pushing, run `uv run ruff format .`, `uv run ruff check .`, and `uv run ty .` in addition to pytest.
+- Tests use mocked HTTPX responses in `tests/mocks/`.
+- Keep call counts minimal for bulk tools to avoid mock mismatch.
+- Default: `uv run pytest`. Execution must be deterministic — no live network calls.
+- Before pushing: `ruff format`, `ruff check`, `ty`, then `pytest`.

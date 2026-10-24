@@ -1,5 +1,5 @@
 
-# Infrahub MCP LLM/AI Agent Context
+# Franc — Infrahub MCP Server
 
 [![Ruff][ruff-badge]][ruff-link]
 [![Python][python-badge]][python-link]
@@ -7,142 +7,309 @@
 [![Coverage Status][coverage-badge]][coverage-link]
 [![GitHub Discussion][github-discussions-badge]][github-discussions-link]
 
-## Project Overview
+Franc is an MCP (Model Context Protocol) server for [Infrahub](https://docs.infrahub.app).
+It exposes the full Infrahub object graph to LLM agents via two backends:
 
-This project provides an MCP (Model Context Protocol) server for Infrahub, enabling LLM/AI agents to discover schemas, query objects, manage branches, and orchestrate data-center deployments. It includes schema-driven discovery, datacenter deployment helpers, and test automation with robust mocking.
+- **Infrahub GraphQL API** — branch-aware CRUD, schema discovery, and proposed-change workflow
+- **Neo4j graph** — direct BFS path traversal, segment tracing, and interface health checks
 
-### Key Features
+## Architecture
 
-- **Schema discovery & validation:** Tools to list schema nodes, retrieve filters, and validate required fields before mutations.
-- **Datacenter deployment orchestration:** Discover design/strategy/provider options, then create full deployments with `create_datacenter_deployment`.
-- **Branch management:** Create and list branches for isolated deployments and experiments.
-- **Node retrieval:** Query nodes by kind/filters, fetch related nodes, and navigate object graphs.
-- **Test automation:** Pytest fixtures with file-based mocks for deterministic, isolated unit tests.
-- **Agent guidance:** Shared best practices in `AGENTS.md` and `.github/agents/infrahub.agent.md` for consistent agent behavior.
+```
+franc/
+├── server.py          — FrancFastMCP app, lifespan (InfrahubClient), personality
+├── traversal.py       — Neo4j HTTP client + BFS engine (PathTraverser, Hop)
+├── flow_helpers.py    — Cypher query builders, path annotation, app/component resolvers
+├── constants.py       — Default URLs, tokens, connector type lists
+├── utils.py           — MCPResponse, maybe_compress, require_client
+└── tools/
+    ├── schema.py      — Schema discovery
+    ├── nodes.py       — Object retrieval
+    ├── branch.py      — Branch + proposed-change lifecycle
+    ├── datacenter.py  — DC deployment orchestration
+    ├── customer.py    — Customer boarding
+    ├── application.py — Application deployment
+    ├── topology.py    — Fabric inventory (devices, BGP, segments)
+    ├── graph.py       — Neo4j path finding + segment trace
+    ├── flow.py        — Component flow trace + routing connections health
+    ├── flow_pair.py   — Component-to-component + app-to-app path tracing
+    ├── monitoring.py  — Path monitoring inventory (BFS + GraphQL join)
+    ├── cloud.py       — Cloud instances, clusters, connectivity
+    ├── colocation.py  — Colocation devices and circuits
+    ├── interconnects.py — DCI, DC-to-colo, cloud circuits
+    ├── external.py    — External BGP sessions and providers
+    ├── offices.py     — Office devices and WAN circuits
+    └── gcf.py         — Token compression (encode/decode/analyze)
+```
 
-## Available Tools
+## Tool Reference
 
 ### Schema & Discovery
 
-- `get_schema_mapping`: List all schema node kinds and generics.
-- `get_schema`: Retrieve full schema (attributes, relationships) for a specific kind.
-- `get_schemas`: Retrieve all schemas (optionally exclude Profiles/Templates).
-- `get_node_filters`: List valid filter keys for a kind.
-- `get_required_fields`: List required attribute fields for object creation.
+| Tool | Description |
+|---|---|
+| `get_schema_mapping` | List all schema node kinds and generics |
+| `get_schema` | Full schema (attributes + relationships) for a kind; `expand=true` inlines each relationship's peer schema and, for generics, the allowed concrete kinds (`used_by`) |
+| `get_schemas` | All schemas, optionally excluding Profiles/Templates |
+| `get_node_filters` | Valid filter keys for a kind |
+| `get_required_fields` | Required attribute fields for object creation |
 
 ### Node Retrieval
 
-- `get_nodes`: Retrieve all objects of a specific kind with optional filters.
-- `get_related_nodes`: Fetch related nodes for a specific object and relationship.
+| Tool | Description |
+|---|---|
+| `get_nodes` | Retrieve one page of objects of a kind (`limit` default 50, `offset`, `include_attributes`); returns `total_count` and `has_more` |
+| `search_nodes` | Find nodes of a kind by partial name |
+| `get_object_details` | Full details for one object by id or HFID |
+| `get_objects_details` | Details for multiple objects |
+| `get_related_nodes` | Fetch related nodes for an object and relationship |
 
-### Branch Management
+### Branch & Proposed Change
 
-- `branch_create`: Create a new branch with optional git sync.
-- `get_branches`: List all branches.
+| Tool | Description |
+|---|---|
+| `branch_create` | Create a new branch (optional git sync) |
+| `get_branches` | List all branches |
+| `get_branch_diff` | Object-level diff between a branch and main |
+| `create_proposed_change` | Open a proposed change to trigger validators and artifact generation |
+| `get_proposed_change_artifacts` | List config artifacts generated by a proposed change |
 
 ### Datacenter Deployment
 
-- `discover_datacenter_options`: List available metros, designs, strategies, and providers.
-- `create_datacenter_deployment`: Create a data-center topology on an isolated branch.
-- `validate_datacenter_deployment`: Validate that a deployment exists on a branch.
+| Tool | Description |
+|---|---|
+| `discover_datacenter_options` | Available metros, designs, strategies, providers |
+| `create_datacenter_deployment` | Create a full DC topology on an isolated branch |
+| `validate_datacenter_deployment` | Confirm a deployment exists with expected attributes |
 
-### GraphQL
+### Customer Boarding
 
-- `get_graphql_schema`: Retrieve the complete GraphQL schema.
-- `query_graphql`: Execute arbitrary GraphQL queries.
+| Tool | Description |
+|---|---|
+| `discover_customer_options` | Available customer IDs and environments |
+| `create_customer_boarding` | Board a new customer (VRFs, segments, firewall policies) |
+| `validate_customer_boarding` | Confirm a customer boarding is complete |
 
-### Token Optimization (Toon)
+### Application Deployment
 
-- `toon_encode`: Compress data structures using the toon protocol (30-70% token reduction).
-- `toon_decode`: Decode toon-encoded data back to Python objects.
-- `toon_analyze`: Analyze potential token savings without encoding.
+| Tool | Description |
+|---|---|
+| `discover_application_options` | Available application templates and environments |
+| `create_application_deployment` | Deploy an application for a customer |
+| `validate_application_deployment` | Confirm application deployment is complete |
 
-**When to use toon:**
-- Results with >10 items are **automatically compressed** by `get_nodes`/`get_objects`
-- Look for `*_toon` fields in responses (e.g., `nodes_toon`)
-- Manual tools available for custom compression needs
-- Nested structures with repeated keys
+### Fabric Topology
 
-**Example:**
-```python
-# Analyze first
-result = toon_analyze(data=large_device_list)
-# → Shows 45% potential savings
+| Tool | Description |
+|---|---|
+| `get_topology_devices` | All devices in a deployment with role/status |
+| `get_topology_summary` | Deployment-level summary (counts by role) |
+| `get_segment_inventory` | All VXLAN segments with CIDR, VNI, and firewall info |
+| `get_tenant_namespaces` | IPAM namespaces (VRFs) — customer deployments share the built-in "default" |
+| `get_bgp_sessions` | BGP sessions with status (established/idle/active) |
+| `get_fabric_health` | Aggregate health: interface statuses and BGP session states |
 
-# Encode if worthwhile
-encoded = toon_encode(data=large_device_list, show_stats=True)
-# → Returns compact toon string
+### Graph Path Traversal
 
-# Decode when needed
-decoded = toon_decode(toon_string=encoded["toon_encoded"])
-# → Restores original structure
+| Tool | Description |
+|---|---|
+| `find_physical_path` | BFS between two devices; returns ECMP paths with cable/circuit hops |
+| `trace_path` | Universal tracer: accepts device, `device:iface`, segment name, or component slug |
+| `get_device_neighbors` | One-hop neighbors via cables and circuits |
+| `find_reachable` | Impact analysis: nodes of given kinds reachable from a device, UUID or HFID (Infrahub ≥ 1.10) |
+| `trace_segment_to_cloud` | Segment → servers → firewall (PBR) → fabric → cloud instances |
+| `execute_cypher` | Raw read-only Cypher query against Neo4j |
+
+#### Connector types
+
+| Value | Schema type | Description |
+|---|---|---|
+| `cable` | `DcimCable` | Physical copper/fibre cable |
+| `physical_circuit` | `TopologyPhysicalCircuit` | Equinix cross-connect |
+| `virtual_circuit` | `TopologyVirtualCircuit` | Equinix Fabric VTI, MPLS overlay |
+| `cloud_circuit` | `TopologyVirtualCircuit` | AWS Direct Connect / Azure ExpressRoute |
+
+### Application Flow Tracing (Neo4j)
+
+| Tool | Description |
+|---|---|
+| `trace_application_flow` | AppComponent → segment → FW chassis → fabric → cloud paths + cluster/VM capabilities |
+| `trace_routing_connections` | Device → all path neighbors with per-interface health and BGP session validation |
+| `trace_component_to_component` | BFS between two AppComponents (resolved via segment → servers) |
+| `trace_app_to_app` | BFS between all components of two applications; FW inserted as waypoint when PBR is enabled |
+| `get_path_monitoring_inventory` | Unique interface set across all ECMP paths, enriched with GraphQL status/role/IP metadata |
+
+#### How `trace_path` resolves endpoints
+
+Resolution order for each `src` / `dst` string:
+
+1. `device:iface` — BFS pinned to that interface
+2. Segment name (e.g. `c001-web-frontend-p`) — resolves to all servers carrying the segment on a LAG
+3. Component slug or short name (e.g. `c001-trade-portal-p-web-frontend` or `web-frontend`) — resolves via `app_component__network_segment` → servers
+4. Bare device name
+
+#### Firewall waypoints in `trace_app_to_app`
+
+When a source component's network segment has `pbr_enabled = true`, the BFS path is chained through the DC-local firewall:
+
+```
+src_server → DC-local_FW → dst_server
 ```
 
-## Sample Workflow: Datacenter Deployment
+The FW is selected by matching the server's DC prefix (e.g. `DC1-POD1-SRV-02` → picks `DC1-C002-FW-01` from the segment's firewall list). The resolved waypoints are returned in each server pair so you can see exactly which FW was in the path.
 
-## Sample Workflow: Datacenter Deployment
+### Infrastructure Inventory
+
+| Tool | Description |
+|---|---|
+| `get_cloud_summary` | Cloud providers and region counts |
+| `get_cloud_instances` | Cloud instances with VPC/segment context |
+| `get_cloud_clusters` | Managed Kubernetes clusters and node pools |
+| `get_cloud_connectivity` | Virtual circuits connecting DC to cloud |
+| `get_colocation_summary` | Colocation facilities and cross-connect counts |
+| `get_colocation_devices` | Devices in colocation (patch panels, edge routers) |
+| `get_interconnect_summary` | Aggregate DCI, DC-to-colo, and cloud circuit counts |
+| `get_circuits` | Physical circuits (`scope`: all, dc-colo, office, colo-colo, partner) |
+| `get_dci_bgp_sessions` | BGP sessions over DCI links (border-leaf peerings) |
+| `get_cloud_circuits` | Virtual circuits used for cloud connectivity |
+| `get_external_providers` | External BGP providers (ISPs, transit, IX) |
+| `get_external_bgp_sessions` | External BGP sessions with health status |
+| `get_office_summary` | Office location counts and WAN circuit overview |
+| `get_office_devices` | Devices at an office site |
+
+### Device Troubleshooting (SSH)
+
+SSHes into a live or emulated device and runs a read-only show command, optionally parsed into
+structured rows via [ntc-templates](https://github.com/networktocode/ntc-templates). Requires
+`SSH_USERNAME`/`SSH_PASSWORD` env vars and a device with `primary_address` set in Infrahub.
+
+| Tool | Description |
+|---|---|
+| `execute_show_command` | Run any show/display/get/ping/traceroute command on a device |
+| `get_interface_status` | Live interface up/down/IP state |
+| `get_bgp_summary` | Live BGP neighbor state |
+
+### Token Optimization (GCF)
+
+Results with more than 5 items are **candidates** for automatic compression by most tools using
+[GCF](https://gcformat.com/) (Graph Compact Format) — candidates over policy: GCF and JSON are
+both measured in tokens, and the tool only compresses when GCF is actually smaller. The compressed
+payload appears as a `*_gcf` key (e.g. `paths_gcf`, `nodes_gcf`) only when it wins; otherwise the
+tool returns plain, uncompressed data (e.g. flat lists of short unique strings rarely compress
+well and are left as-is). Each auto-compression also verifies a decode round-trip first; if GCF
+can't losslessly round-trip a given data shape, compression is skipped rather than shipping an
+undecodable payload.
+
+| Tool | Description |
+|---|---|
+| `gcf_encode` | Compress a data structure |
+| `gcf_decode` | Restore a GCF-encoded string to its original structure |
+| `gcf_analyze` | Show potential savings before encoding |
+
+## Sample Workflows
+
+### Find the path between two servers
 
 ```text
-
-User: "Deploy a new datacenter in Berlin."
-
-Agent:
-1. discover_datacenter_options
-   → returns metros: ["BERLIN", "MUNICH", ...],
-            designs: ["S-Standard", "M-Standard", "L-Hierarchical", ...],
-            strategies: ["ebgp-evpn", "isis-ibgp", ...],
-            providers: ["Internal", "Technology Partner", ...]
-
-2. Collect inputs from user:
-   - site_name: "DC-BER-1"
-   - metro_location: "BERLIN"
-   - design: "M-Standard"
-   - strategy: "ebgp-evpn"
-   - provider: "Internal"
-
-3. create_datacenter_deployment(
-     site_name="DC-BER-1",
-     metro_location="BERLIN",
-     design="M-Standard",
-     strategy="ebgp-evpn",
-     provider="Internal"
-   )
-   → returns branch name, topology summary, status
-
-4. validate_datacenter_deployment(branch="dc-deploy-dc-ber-1-...", site_name="DC-BER-1")
-   → confirms topology exists with expected attributes
+trace_path(src="DC1-POD1-SRV-01", dst="DC1-POD2-SRV-02")
+→ 5 hops: SRV-01 → L1 → SP1 → super-spine-01 → SP1 → L1 → SRV-02
+  ecmp_available: 16
 ```
 
-## Best Practices
+### Trace an application segment to cloud
 
-For detailed agent guidance, see [AGENTS.md](AGENTS.md) and [.github/agents/infrahub.agent.md](.github/agents/infrahub.agent.md).
+```text
+trace_segment_to_cloud(segment_name="c001-web-frontend-p")
+→ segment: CIDRs, namespace, firewalls (active/passive, HA peers), VLAN/VNI per DC
+→ server_paths: DC1-POD2-SRV-02 → DC1-C001-FW-01 → DC1-BL1 → EQX-DC1-PATCH-01 → FR2-EDGE-01 → ...
+```
 
-**Quick summary:**
+### Trace inter-application traffic with firewalls
 
-- **Discover first:** Use `get_schema_mapping`/`get_node_filters`/`discover_datacenter_options` before prompting users.
-- **Validate inputs:** Check required fields with `get_required_fields` before mutations.
-- **Fail fast:** When queries return empty, restate kind/branch/filters and suggest remediation.
-- **Concise summaries:** Return counts and status in bullets/tables; avoid full object dumps unless requested.
-- **Datacenter flow:** Discover options → collect all inputs → call `create_datacenter_deployment` once.
-- **Branch naming:** Auto-generate branch names when not provided; avoid guessing values.
+```text
+trace_app_to_app(src_app="c002-shipment-tracker-p", dst_app="c003-vault-core-p")
+→ component_pairs: [
+    {src: tracking-api (c002-app-backend-p), dst: vault-api (c003-vault-core-p),
+     server_pairs: [
+       {src: DC1-POD1-SRV-02, dst: DC1-POD2-SRV-02,
+        waypoints: ["DC1-C002-FW-01"],
+        path: SRV-02 → L1 → SP1 → BL1 → DC1-C002-FW-01 → BL1 → SP1 → L1 → SRV-02,
+        path_status: "ok"}
+     ]}
+  ]
+```
 
-[ruff-badge]:
-<https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json>
-[ruff-link]:
-(https://github.com/astral-sh/ruff)
-[github-discussions-link]:
-<https://github.com/t0m3kz/franc-mcp/discussions/>
-[github-discussions-badge]:
-<https://img.shields.io/static/v1?label=Discussions&message=Ask&color=blue&logo=github>
-[github-badge]:
-<https://github.com/t0m3kz/franc-mcp/actions/workflows/main.yml/badge.svg?branch=main>
-[github-link]:
-<https://github.com/t0m3kz/franc-mcp/actions/workflows/main.yml>
-[coverage-badge]:
-https://img.shields.io/codecov/c/github/t0m3kz/franc?label=coverage
-[coverage-link]:
-https://codecov.io/gh/t0m3kz/franc-mcp
-[python-badge]:
-<https://img.shields.io/badge/python-3.10%7C3.11%7C3.12%7C3.13-000000?logo=python>
-[python-link]:
-<https://www.python.org>
+### Deploy a new datacenter
+
+```text
+1. discover_datacenter_options()
+   → metros, designs, strategies, providers
+
+2. create_datacenter_deployment(
+     site_name="DC-BER-1", metro_location="BERLIN",
+     design="M-Standard", strategy="ebgp-evpn", provider="Internal"
+   )
+   → branch: "dc-deploy-dc-ber-1-...", topology created
+
+3. create_proposed_change(source_branch="dc-deploy-dc-ber-1-...")
+   → triggers validators + artifact generation
+
+4. get_proposed_change_artifacts(source_branch="dc-deploy-dc-ber-1-...")
+   → lists device configs generated (startup config per device)
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `INFRAHUB_ADDRESS` | `http://localhost:8000` | Infrahub API address |
+| `INFRAHUB_API_TOKEN` | *(none — warn if missing)* | API auth token |
+| `FRANC_READ_ONLY` | `false` | Hide and reject all write/create tools |
+| `FRANC_AUTH_MODE` | `shared` | `token-passthrough` makes every caller send their own Infrahub token (HTTP only) |
+| `FRANC_AUDIT` | `true` | Structured audit log line per tool call |
+| `FRANC_METRICS` | `false` | Prometheus metrics at `GET /metrics` |
+| `FRANC_OTEL` | `false` | OpenTelemetry span per tool call (needs `opentelemetry-api`) |
+| `FRANC_RETRIES` | `2` | Retry transient errors on read-only tools (`0` disables) |
+| `FRANC_MAX_RESPONSE_BYTES` | `1000000` | Cap on a tool response (`0` disables) |
+| `SSH_ALLOWED_NETWORKS` | RFC1918 + loopback + link-local | Comma-separated CIDRs the SSH tools may connect to |
+| `SSH_KNOWN_HOSTS` | *(none — host keys not verified)* | Path to a known_hosts file to enable host-key checking |
+| `NEO4J_HTTP_URL` | `http://localhost:7474` | Neo4j HTTP endpoint (only `execute_cypher`) |
+| `NEO4J_USER` | `neo4j` | Neo4j username |
+| `NEO4J_PASSWORD` | `admin` | Neo4j password |
+
+All defaults work with the standard `docker compose up -d` stack in [infrahub-demo](https://github.com/t0m3kz/infrahub-demo).
+
+## Development
+
+```bash
+# Install dependencies
+uv sync
+
+# Run tests
+uv run pytest tests/ -v
+
+# Start the server (stdio, for Claude Desktop / VS Code extension)
+uv run franc
+```
+
+## Best Practices for Agents
+
+For full agent guidance see [AGENTS.md](AGENTS.md).
+
+- **Discover before mutating** — call `get_schema_mapping` / `discover_*` before any create/modify operation
+- **Always branch** — never write directly to `main`; create a branch first
+- **Proposed change after changes** — call `create_proposed_change` to trigger validators and generate device configs
+- **Use `all_paths=false` for troubleshooting** — the default returns one representative path; use `all_paths=true` only when you need full ECMP enumeration
+- **Check `ecmp_available`** — single-path responses still report how many ECMP alternatives exist
+- **Interface health before changes** — call `get_fabric_health` or `trace_routing_connections` to baseline the current state
+
+[ruff-badge]: <https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json>
+[ruff-link]: (https://github.com/astral-sh/ruff)
+[github-discussions-link]: <https://github.com/t0m3kz/franc-mcp/discussions/>
+[github-discussions-badge]: <https://img.shields.io/static/v1?label=Discussions&message=Ask&color=blue&logo=github>
+[github-badge]: <https://github.com/t0m3kz/franc-mcp/actions/workflows/main.yml/badge.svg?branch=main>
+[github-link]: <https://github.com/t0m3kz/franc-mcp/actions/workflows/main.yml>
+[coverage-badge]: https://img.shields.io/codecov/c/github/t0m3kz/franc?label=coverage
+[coverage-link]: https://codecov.io/gh/t0m3kz/franc-mcp
+[python-badge]: <https://img.shields.io/badge/python-3.10%7C3.11%7C3.12%7C3.13-000000?logo=python>
+[python-link]: <https://www.python.org>
