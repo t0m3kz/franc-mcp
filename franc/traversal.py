@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import uuid
 from typing import TYPE_CHECKING, Any
 
@@ -57,11 +58,34 @@ def _neo4j_run(
     return [dict(zip(cols, row["row"])) for row in result["data"]]
 
 
-def _neo4j_credentials(ctx_neo4j_url: str | None) -> tuple[str, str, str]:
-    url = ctx_neo4j_url or os.getenv("NEO4J_HTTP_URL", NEO4J_HTTP_URL)
+def _neo4j_credentials() -> tuple[str, str, str]:
+    """Connection settings from the server environment only — never from tool arguments, so the
+    Neo4j password cannot be redirected to a caller-chosen host."""
+    url = os.getenv("NEO4J_HTTP_URL", NEO4J_HTTP_URL)
     user = os.getenv("NEO4J_USER", NEO4J_USER)
     password = os.getenv("NEO4J_PASSWORD", NEO4J_PASSWORD)
     return url, user, password
+
+
+# String literals, quoted identifiers and comments are blanked first so that a keyword inside a value
+# ('RESET SET') is not flagged — and so that a keyword hidden behind a comment cannot slip past.
+_CYPHER_NOISE_RE = re.compile(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"|`[^`]*`|//[^\n]*|/\*.*?\*/", re.DOTALL)
+# Anything that can write, run procedures (apoc.*, dbms.*), read files/URLs, administer, or chain statements.
+_CYPHER_FORBIDDEN_RE = re.compile(
+    r"\b(CREATE|MERGE|DELETE|DETACH|SET|REMOVE|DROP|CALL|LOAD|FOREACH|GRANT|DENY|REVOKE|ALTER|RENAME)\b|;",
+    re.IGNORECASE,
+)
+
+
+def cypher_write_violation(query: str) -> str | None:
+    """Return the offending keyword if ``query`` is not a plain read (MATCH/RETURN/WITH/UNWIND), else None.
+
+    Keyword matching is word-boundary based, so SET followed by a newline or tab is caught (a trailing-space
+    match is not). This is defence in depth only: point NEO4J_USER at a read-only Neo4j account.
+    """
+    stripped = _CYPHER_NOISE_RE.sub(" ", query)
+    match = _CYPHER_FORBIDDEN_RE.search(stripped)
+    return match.group(0).upper() if match else None
 
 
 # ---------------------------------------------------------------------------

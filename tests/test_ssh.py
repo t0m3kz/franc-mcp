@@ -88,7 +88,7 @@ async def test_execute_show_command_rejects_config_command(mock_context, ssh_env
 
     assert result.status == MCPToolStatus.ERROR
     assert result.error is not None
-    assert "not a recognized troubleshooting command" in result.error
+    assert "refused" in result.error
 
 
 @pytest.mark.asyncio
@@ -214,3 +214,51 @@ async def test_get_bgp_summary_picks_platform_command(mock_context, ssh_env, mon
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
     assert result.data["command"] == "show bgp summary"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "command",
+    ["show version; reload", "show version && reload", "show x | sh", "show $(id)", "getent passwd", "show x\nreload"],
+)
+async def test_execute_show_command_refuses_injection_before_connecting(mock_context, ssh_env, monkeypatch, command):
+    _inject_client(_FakeDevice("10.0.0.1", "cisco_ios"))
+    run = AsyncMock(return_value="should never run")
+    monkeypatch.setattr("franc.tools.ssh.run_ssh_command", run)
+
+    result = await execute_show_command(mock_context, device_name="leaf-01", command=command, branch=None)
+
+    assert result.status == MCPToolStatus.ERROR
+    assert result.error is not None and "refused" in result.error
+    run.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_execute_show_command_allows_output_filter(mock_context, ssh_env, monkeypatch):
+    _inject_client(_FakeDevice("10.0.0.1", "cisco_ios"))
+    run = AsyncMock(return_value="router bgp 65000")
+    monkeypatch.setattr("franc.tools.ssh.run_ssh_command", run)
+
+    result = await execute_show_command(
+        mock_context, device_name="leaf-01", command="show run | include bgp", branch=None
+    )
+
+    assert result.status == MCPToolStatus.SUCCESS
+    run.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_execute_show_command_refuses_public_address(mock_context, ssh_env, monkeypatch):
+    """The SSH password must not be sent to a non-private primary_address (e.g. one planted on a branch)."""
+    monkeypatch.delenv("SSH_ALLOWED_NETWORKS", raising=False)
+    _inject_client(_FakeDevice("203.0.113.9", "cisco_ios"))
+    run = AsyncMock(return_value="should never run")
+    monkeypatch.setattr("franc.tools.ssh.run_ssh_command", run)
+
+    result = await execute_show_command(
+        mock_context, device_name="leaf-01", command="show ip interface brief", branch=None
+    )
+
+    assert result.status == MCPToolStatus.ERROR
+    assert result.error is not None and "allowed target network" in result.error
+    run.assert_not_called()

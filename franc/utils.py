@@ -1,8 +1,10 @@
 import asyncio
 import hashlib
 import json
+import logging
 from contextvars import ContextVar
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
@@ -13,7 +15,27 @@ from infrahub_sdk import Config, InfrahubClient
 from infrahub_sdk.node import Attribute, InfrahubNode, RelatedNode, RelationshipManager
 from pydantic import BaseModel
 
-_TIKTOKEN_ENCODER = tiktoken.get_encoding("cl100k_base")
+logger = logging.getLogger("franc.utils")
+
+
+@lru_cache(maxsize=1)
+def _token_encoder() -> "tiktoken.Encoding | None":
+    """cl100k_base encoder, loaded on first use rather than at import.
+
+    tiktoken downloads its vocabulary the first time it is used; with no network (air-gapped container) that
+    would stop the whole server from starting. Return None instead and let _count_tokens estimate.
+    """
+    try:
+        return tiktoken.get_encoding("cl100k_base")
+    except Exception as exc:  # noqa: BLE001  # network/cache failure — degrade, don't crash
+        logger.warning("tiktoken vocabulary unavailable (%s); estimating tokens as ~4 characters each.", exc)
+        return None
+
+
+def _count_tokens(text: str) -> int:
+    encoder = _token_encoder()
+    return len(encoder.encode(text)) if encoder is not None else -(-len(text) // 4)
+
 
 CURRENT_DIRECTORY = Path(__file__).parent.resolve()
 PROMPTS_DIRECTORY = CURRENT_DIRECTORY / "prompts"
@@ -237,8 +259,8 @@ def estimate_token_savings(data: Any) -> tuple[dict[str, Any], str]:
     if not _gcf_round_trips(data, gcf_str):
         gcf_str = json_str
 
-    json_tokens = len(_TIKTOKEN_ENCODER.encode(json_str))
-    gcf_tokens = len(_TIKTOKEN_ENCODER.encode(gcf_str))
+    json_tokens = _count_tokens(json_str)
+    gcf_tokens = _count_tokens(gcf_str)
     savings = ((json_tokens - gcf_tokens) / json_tokens * 100) if json_tokens > 0 else 0
 
     stats = {

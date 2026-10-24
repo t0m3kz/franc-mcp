@@ -372,3 +372,63 @@ async def test_get_schema_expand_inlines_peer_and_generic_used_by():
     assert rels[0]["peer_schema"]["used_by"] == ["CapCluster", "CapVm"]
     assert rels[0]["peer_schema"]["attributes"] == [{"name": "name", "kind": "Text", "optional": False}]
     assert "peer_schema" not in rels[1]  # peer kind missing -> left as plain reference
+
+
+# ---------------------------------------------------------------------------
+# Token passthrough — header handling (patched headers stand in for an HTTP request)
+# ---------------------------------------------------------------------------
+
+
+def _token_server() -> FastMCP:
+    server = FastMCP("t")
+
+    @server.tool
+    def whoami() -> str:
+        return request_token.get() or "shared"
+
+    server.add_middleware(TokenPassthroughMiddleware())
+    return server
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "headers",
+    [{"x-infrahub-key": "tok-123"}, {"authorization": "Bearer tok-123"}, {"authorization": "bearer tok-123"}],
+)
+async def test_token_passthrough_exposes_callers_token_to_the_tool(monkeypatch, headers):
+    monkeypatch.setattr("franc.mcp_middleware.get_http_headers", lambda **_: headers)
+    async with Client(_token_server()) as c:
+        assert (await c.call_tool("whoami", {})).data == "tok-123"
+    assert request_token.get() is None  # never leaks into the next call
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "headers",
+    [{}, {"x-infrahub-key": "   "}, {"authorization": "Basic dXNlcjpwYXNz"}, {"authorization": "Bearer "}],
+)
+async def test_token_passthrough_rejects_missing_or_unusable_credentials(monkeypatch, headers):
+    monkeypatch.setattr("franc.mcp_middleware.get_http_headers", lambda **_: headers)
+    async with Client(_token_server()) as c:
+        with pytest.raises(ToolError, match="your own Infrahub token"):
+            await c.call_tool("whoami", {})
+
+
+@pytest.mark.asyncio
+async def test_require_client_authenticates_as_the_caller_not_the_server(monkeypatch):
+    """With a request token set, require_client must hand back a client bound to that token."""
+    from franc.utils import require_client
+
+    _TOKEN_CLIENTS.clear()
+    shared = SimpleNamespace(address="http://infrahub.test:8000")
+    ctx = SimpleNamespace(request_context=SimpleNamespace(server=None, lifespan_context=SimpleNamespace(client=shared)))
+    assert require_client(ctx) is shared  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+
+    reset = request_token.set("caller-token")
+    try:
+        client = require_client(ctx)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+    finally:
+        request_token.reset(reset)
+    assert client is not shared
+    assert client.config.api_token == "caller-token"
+    _TOKEN_CLIENTS.clear()

@@ -93,7 +93,10 @@ it needs the docker-compose stack and env vars `NEO4J_HTTP_URL`, `NEO4J_USER`, `
   analysis: which nodes of the given kinds are reachable from `source` (device name, UUID, or
   kind-qualified HFID such as `DcimPhysicalDevice__dc1-fw-01`). Prefer it over hand-written Cypher for
   "what sits behind / depends on X?"
-- `execute_cypher(query)` — raw read-only Cypher (MATCH/RETURN only — write ops blocked)
+- `execute_cypher(query)` — raw read-only Cypher (MATCH/RETURN only). Writes, `CALL` (apoc/dbms), `LOAD`,
+  admin keywords and `;` are refused. The connection comes from the server environment only — there is no
+  URL argument, so the Neo4j password can never be sent to a caller-chosen host. The keyword filter is a
+  backstop: point `NEO4J_USER` at a **read-only** Neo4j account
 
 **Infrahub graph model (for Cypher queries):**
 
@@ -113,6 +116,15 @@ optionally structured with ntc-templates. This is the one place franc talks to a
 directly instead of reading Infrahub's declared state or the Neo4j graph.
 Requires env vars: `SSH_USERNAME`, `SSH_PASSWORD` (no default — set explicitly).
 Only works on devices with `primary_address` set in Infrahub.
+
+Guards (see `franc/ssh.py`):
+
+- Commands must start with the whole word `show`, `display`, `get`, `ping` or `traceroute`, contain no semicolon, ampersand,
+  backtick, `$`, `<`, `>`, backslash or newline, and may only be piped into output filters (`include`, `exclude`, `begin`,
+  `section`, `grep`, `match`, `count`, `no-more`, `display`, `json`, ...).
+- The device address must be RFC1918/ULA/loopback/link-local, because the password goes to whatever
+  `primary_address` Infrahub holds (a branch can change it). `SSH_ALLOWED_NETWORKS=<cidr,cidr>` replaces the default.
+- Host keys are not verified by default (emulated nodes change keys); set `SSH_KNOWN_HOSTS=<path>` to verify.
 
 **Use cases:**
 

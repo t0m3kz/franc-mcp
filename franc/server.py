@@ -76,7 +76,7 @@ Credentials check (run ONCE at the start of each session, before the first tool 
     - INFRAHUB_API_TOKEN  → read from the server environment (or sent per request, see FRANC_AUTH_MODE)
     - NEO4J_HTTP_URL      → defaults to http://localhost:7474
     - NEO4J_USER          → defaults to neo4j
-    - NEO4J_PASSWORD      → defaults to admin
+    - NEO4J_PASSWORD      → read from the server environment
 - Never ask the user for, print, or repeat a token or password. Proceed silently with the server's configuration.
 - ONLY ask the user if they explicitly tell you the defaults don't work for their setup.
 - If a tool call fails with an auth/connection error, THEN ask the user whether to override the relevant credential.

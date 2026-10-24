@@ -219,3 +219,78 @@ async def test_search_nodes(client, add_mock_response, httpx_mock):
             assert all(isinstance(n, str) for n in data["nodes"])
     finally:
         mcp.test_client = None
+
+
+# ---------------------------------------------------------------------------
+# get_nodes pagination edge cases (fake client — exact control over filters/count)
+# ---------------------------------------------------------------------------
+
+
+def _paged_client(rows, total=None, count_error=None):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from franc.utils import _SCHEMA_CACHE
+
+    _SCHEMA_CACHE.clear()
+    count = AsyncMock(side_effect=count_error) if count_error else AsyncMock(return_value=total)
+    return SimpleNamespace(
+        schema=SimpleNamespace(get=AsyncMock(return_value=SimpleNamespace(kind="DcimPhysicalDevice"))),
+        filters=AsyncMock(return_value=[SimpleNamespace(display_label=r) for r in rows]),
+        count=count,
+    )
+
+
+async def _get_nodes(fake, **args):
+    mcp.test_client = fake
+    try:
+        async with Client(mcp) as client_session:
+            return _unwrap(await client_session.call_tool("get_nodes", {"kind": "DcimPhysicalDevice", **args}))
+    finally:
+        mcp.test_client = None
+
+
+@pytest.mark.asyncio
+async def test_get_nodes_full_page_counts_total_and_reports_more():
+    fake = _paged_client(["a", "b", "c"], total=120)
+    data = await _get_nodes(fake, limit=3)
+    assert data["nodes"] == ["a", "b", "c"]
+    assert (data["total_count"], data["has_more"], data["offset"], data["limit"]) == (120, True, 0, 3)
+    kwargs = fake.filters.await_args.kwargs
+    assert kwargs["limit"] == 3 and kwargs["offset"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_nodes_last_page_needs_no_count_query():
+    fake = _paged_client(["x", "y"], total=999)
+    data = await _get_nodes(fake, limit=3, offset=9)
+    assert (data["total_count"], data["has_more"]) == (11, False)
+    fake.count.assert_not_called()
+    assert fake.filters.await_args.kwargs["offset"] == 9
+
+
+@pytest.mark.asyncio
+async def test_get_nodes_empty_page_past_the_end_counts_instead_of_guessing():
+    """offset=500 with no rows must not report total_count=500."""
+    fake = _paged_client([], total=120)
+    data = await _get_nodes(fake, limit=10, offset=500)
+    assert data["nodes"] == []
+    assert (data["total_count"], data["has_more"]) == (120, False)
+    fake.count.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_get_nodes_count_failure_leaves_has_more_unknown():
+    fake = _paged_client(["a", "b", "c"], count_error=RuntimeError("count boom"))
+    data = await _get_nodes(fake, limit=3)
+    assert data["nodes"] == ["a", "b", "c"]  # the read itself still succeeds
+    assert data["total_count"] is None and data["has_more"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_nodes_limit_minus_one_returns_everything_without_count():
+    fake = _paged_client(["a", "b"])
+    data = await _get_nodes(fake, limit=-1)
+    assert (data["total_count"], data["has_more"]) == (2, False)
+    assert fake.filters.await_args.kwargs["limit"] is None
+    fake.count.assert_not_called()

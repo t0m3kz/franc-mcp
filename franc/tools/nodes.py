@@ -178,8 +178,12 @@ async def _total_count(
     offset: int,
     limit: int | None,
 ) -> int | None:
-    """Total matches for a paged query; skips the extra count call when the page proves the total."""
-    if limit is None or returned < limit:
+    """Total matches for a paged query; skips the extra count call when the page proves the total.
+
+    A short page proves it (offset + returned) — except an empty page past offset 0, where the offset may
+    simply overshoot the end, so the real total has to be counted.
+    """
+    if limit is None or (returned < limit and (returned > 0 or offset == 0)):
         return offset + returned
     try:
         return await client.count(kind=kind, branch=branch, partial_match=partial_match, **filters)

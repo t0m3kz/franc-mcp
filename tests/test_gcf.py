@@ -327,3 +327,21 @@ async def test_maybe_compress_fail_open_on_bad_round_trip(mock_context: Context)
     result = await maybe_compress(mock_context, data, "devices", "devices_gcf")
 
     assert result is None
+
+
+def test_token_counting_falls_back_when_tiktoken_vocabulary_is_unavailable(monkeypatch):
+    """No network for the tiktoken download must degrade to an estimate, not break compression."""
+    from franc import utils
+
+    def boom(_name):
+        raise OSError("offline")
+
+    utils._token_encoder.cache_clear()
+    monkeypatch.setattr(utils.tiktoken, "get_encoding", boom)
+    try:
+        assert utils._count_tokens("abcdefgh") == 2  # ceil(8 / 4)
+        assert utils._count_tokens("") == 0
+        stats, _ = utils.estimate_token_savings([{"name": f"dev-{i}", "role": "leaf"} for i in range(8)])
+        assert stats["json_tokens"] > 0
+    finally:
+        utils._token_encoder.cache_clear()

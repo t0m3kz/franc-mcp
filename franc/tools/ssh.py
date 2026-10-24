@@ -21,7 +21,7 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from franc.constants import KIND_DEVICE
-from franc.ssh import parse_with_ntc, run_ssh_command, ssh_credentials
+from franc.ssh import parse_with_ntc, run_ssh_command, ssh_credentials, ssh_host_allowed, validate_show_command
 from franc.utils import MCPResponse, MCPToolStatus, _log_and_return_error, maybe_compress, require_client
 
 if TYPE_CHECKING:
@@ -29,10 +29,8 @@ if TYPE_CHECKING:
 
 mcp: FastMCP = FastMCP(name="Device SSH Troubleshooting")
 
-# Only troubleshooting/read-only commands are allowed — this is a lab escape hatch, not a
-# config-push tool. Mirrors execute_cypher's write-keyword guard in franc/tools/graph.py,
-# but as an allowlist since config commands vary far more than Cypher write keywords.
-_ALLOWED_COMMAND_PREFIXES = ("show", "display", "get", "ping", "traceroute")
+# Only troubleshooting/read-only commands are allowed (see franc.ssh.validate_show_command) — this is a lab
+# escape hatch, not a config-push tool. An allowlist, since config commands vary far more than Cypher keywords.
 
 # device_name -> (interface command, bgp summary command), keyed by DcimPlatform.netmiko_device_type.
 # Falls back to the IOS-style syntax, the most common platform in this repo's bootstrap data.
@@ -113,12 +111,11 @@ async def execute_show_command(
     Returns {"raw_output", "parsed", "platform", "command"}. `parsed` is None if no
     ntc-templates template matches — raw_output is always populated.
     """
-    normalized = command.strip().lower()
-    if not any(normalized.startswith(prefix) for prefix in _ALLOWED_COMMAND_PREFIXES):
+    if reason := validate_show_command(command):
         return await _log_and_return_error(
             ctx=ctx,
-            error=f"Command '{command}' is not a recognized troubleshooting command.",
-            remediation=f"Only commands starting with one of {_ALLOWED_COMMAND_PREFIXES} are allowed.",
+            error=f"Command '{command}' refused: {reason}",
+            remediation="Only plain show/display/get/ping/traceroute commands (optionally piped to an output filter).",
         )
 
     try:
@@ -141,6 +138,12 @@ async def execute_show_command(
             remediation="Verify the device name and that primary_address is set (get_object_details).",
         )
     device, host = resolved
+    if not ssh_host_allowed(host):
+        return await _log_and_return_error(
+            ctx=ctx,
+            error=f"Refusing to SSH to {host}: not in an allowed target network.",
+            remediation="Only private/loopback/link-local addresses by default; set SSH_ALLOWED_NETWORKS to change.",
+        )
     platform = await _resolve_platform(device)
 
     await ctx.info(f"Connecting to {device_name} ({host}) to run: {command}")

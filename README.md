@@ -271,6 +271,8 @@ trace_app_to_app(src_app="c002-shipment-tracker-p", dst_app="c003-vault-core-p")
 | `FRANC_OTEL` | `false` | OpenTelemetry span per tool call (needs `opentelemetry-api`) |
 | `FRANC_RETRIES` | `2` | Retry transient errors on read-only tools (`0` disables) |
 | `FRANC_MAX_RESPONSE_BYTES` | `1000000` | Cap on a tool response (`0` disables) |
+| `SSH_ALLOWED_NETWORKS` | RFC1918 + loopback + link-local | Comma-separated CIDRs the SSH tools may connect to |
+| `SSH_KNOWN_HOSTS` | *(none — host keys not verified)* | Path to a known_hosts file to enable host-key checking |
 | `NEO4J_HTTP_URL` | `http://localhost:7474` | Neo4j HTTP endpoint (only `execute_cypher`) |
 | `NEO4J_USER` | `neo4j` | Neo4j username |
 | `NEO4J_PASSWORD` | `admin` | Neo4j password |

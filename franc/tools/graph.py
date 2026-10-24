@@ -24,6 +24,7 @@ from franc.traversal import (
     NodeResolutionError,
     _neo4j_credentials,
     _neo4j_run,
+    cypher_write_violation,
     is_uuid,
     resolve_node_ref,
     shape_reachable_result,
@@ -926,7 +927,6 @@ async def execute_cypher(
             )
         ),
     ],
-    neo4j_url: Annotated[str | None, Field(default=None, description="Neo4j HTTP URL override.")],
 ) -> MCPResponse:
     """
     Execute a raw read-only Cypher query against the Infrahub Neo4j graph.
@@ -947,19 +947,17 @@ async def execute_cypher(
 
     Returns raw rows. Auto-compresses if >5 rows.
     """
-    # Lightweight guard against write operations
-    normalized = query.strip().upper()
-    for write_kw in ("CREATE ", "MERGE ", "DELETE ", "SET ", "REMOVE ", "DROP "):
-        if write_kw in normalized:
-            return await _log_and_return_error(
-                ctx=ctx,
-                error=f"Write operation detected: {write_kw.strip()}. execute_cypher is read-only.",
-                remediation="Remove write clauses. Use Infrahub SDK tools to modify data.",
-            )
+    # Guard against writes, procedure calls (apoc/dbms), file loads and statement chaining
+    if keyword := cypher_write_violation(query):
+        return await _log_and_return_error(
+            ctx=ctx,
+            error=f"Forbidden Cypher keyword: {keyword}. execute_cypher only accepts read queries (MATCH/RETURN).",
+            remediation="Remove write/CALL/LOAD clauses and statement separators. Use Infrahub SDK tools to modify data.",
+        )
 
     await ctx.info("Executing raw Cypher query...")
     try:
-        url, user, password = _neo4j_credentials(neo4j_url)
+        url, user, password = _neo4j_credentials()
         rows = _neo4j_run(query, url, user, password)
     except httpx.ConnectError as exc:
         return await _log_and_return_error(
