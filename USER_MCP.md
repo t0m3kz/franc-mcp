@@ -437,48 +437,23 @@ DC2-POD1-SRV-01  →  OFC-LON-BRANCH-ACC-01
 
 ---
 
-## CLI scripts (power users)
+## Calling tools directly
 
-These scripts call Franc's tools directly without an AI session:
+Everything above is a Franc tool, so any MCP client can call it with no chat in between (for example the
+MCP inspector: `npx @modelcontextprotocol/inspector uv run fastmcp run franc/server.py`).
 
-```bash
-# List all applications
-uv run scripts/list_apps.py
-uv run scripts/list_apps.py --customer c001
+| Task | Tool |
+|------|------|
+| List applications, segments, VMs | `discover_application_options(customer_id?)` |
+| Trace paths between two applications | `trace_app_to_app(src_app, dst_app)` |
+| Inspect segments (owner, environment, PBR) | `get_segment_inventory(customer_id?, environment?)` |
+| ECMP paths between two devices | `find_physical_path(src, dst, all_paths=true)` |
+| DC fabric diagram | `generate_topology_diagram(datacenter, format="drawio")` |
+| Diagram of the path between two devices | `generate_path_diagram(source, target)` |
+| Containerlab topology for a path | `generate_containerlab_topology(source, target)` |
+| Bill of materials | `get_bill_of_materials(scope)` and `get_bom_diff(branch, base_branch)` |
 
-# Trace paths between two applications (table, one path per pair)
-uv run scripts/trace_app.py trade-portal fleet-manager
-
-# Show all ECMP paths with cables
-uv run scripts/trace_app.py trade-portal fleet-manager --ecmp
-
-# Per-hop detail (interfaces + cables) below the table
-uv run scripts/trace_app.py trade-portal fleet-manager --hops
-
-# Inspect a segment
-uv run scripts/trace_segment.py c001-prod-web
-
-# --- Topology diagrams (Draw.io) ---
-
-# DC fabric diagram (devices + cables, layered layout)
-uv run scripts/topology_diagram.py DC1 --drawio
-uv run scripts/topology_diagram.py DC2 --drawio --servers   # include compute nodes
-uv run scripts/topology_diagram.py DC3 --drawio --branch main
-
-# Cluster swimlane diagram (VirtCluster → node pools)
-uv run scripts/topology_diagram.py DC3 --cluster
-uv run scripts/topology_diagram.py DC3-K8S-PROD --cluster   # single cluster
-
-# Path diagram between two devices (BFS, all shortest paths, interface labels)
-uv run scripts/topology_diagram.py --path DC1-BL1 DC1-POD1-L1
-uv run scripts/topology_diagram.py --path DC1-POD1-SRV-01 DC1-BL1
-uv run scripts/topology_diagram.py --path DC2-POD1-SRV-01 OFC-LON-BRANCH-ACC-01
-
-# All diagram commands accept --branch and --out
-uv run scripts/topology_diagram.py DC1 --drawio --branch main --out /tmp/dc1.drawio
-```
-
-Files are saved to the current working directory by default (`<name>_topology.drawio`, `<name>_clusters.drawio`, `<slug>_path.drawio`).
+Check each tool's full parameter list in its docstring or via `tools/list`.
 
 ---
 

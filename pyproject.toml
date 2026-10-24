@@ -50,7 +50,6 @@ exclude = [
 [tool.ruff.lint]
 preview = true
 ignore = [
-    "EXE001",  # scripts run via `uv run`, not direct execution
     "S110",    # try/except/pass — intentional for optional schema fields
 ]
 
