@@ -5,10 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "asyncssh>=2.24.0",
     "fastmcp>=2.10.5",
+    "gcf-python>=2.4.0",
     "infrahub-sdk[all]>=1.13.3",
+    "ntc-templates>=9.2.0",
     "tiktoken>=0.12.0",
-    "toons>=0.1.4",
 ]
 
 [dependency-groups]
@@ -47,3 +49,25 @@ exclude = [
 
 [tool.ruff.lint]
 preview = true
+ignore = [
+    "EXE001",  # scripts run via `uv run`, not direct execution
+    "S110",    # try/except/pass — intentional for optional schema fields
+]
+
+[tool.pymarkdown.plugins.md013]
+enabled = true
+line_length = 200
+tables = false
+code_blocks = false
+
+[tool.pymarkdown.plugins.md024]
+enabled = false
+
+[tool.pymarkdown.plugins.md031]
+enabled = false
+
+[tool.pymarkdown.plugins.md032]
+enabled = false
+
+[tool.pymarkdown.plugins.md060]
+enabled = false

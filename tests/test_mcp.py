@@ -106,13 +106,13 @@ async def test_get_nodes_compressed(client, add_mock_response, httpx_mock):
 
             # With >10 items, result is auto-compressed
             assert isinstance(data, dict)
-            assert "nodes_toon" in data
+            assert "nodes_gcf" in data
             assert data["count"] == 12
 
             # Decode to verify content
-            from franc.utils import decode_from_toon
+            from franc.utils import decode_from_gcf
 
-            decoded = decode_from_toon(data["nodes_toon"])
+            decoded = decode_from_gcf(data["nodes_gcf"])
             assert isinstance(decoded, list)
             assert "ktw-1-oob-02" in decoded
             assert len(decoded) == 12
@@ -149,12 +149,73 @@ async def test_get_object(client, add_mock_response, httpx_mock):
                 },
             )
             data = _unwrap(devices)
-            assert isinstance(data, list)
-            assert len(data) >= 1
+            assert isinstance(data, dict)
+            assert data["count"] >= 1
+            assert data["has_more"] is False
+            assert data["offset"] == 0
 
             # get_nodes returns display labels (strings)
-            device_label = data[0]
+            device_label = data["nodes"][0]
             assert isinstance(device_label, str)
             assert "ktw" in device_label.lower() or "leaf" in device_label.lower()
+    finally:
+        mcp.test_client = None
+
+
+@pytest.mark.asyncio
+async def test_get_nodes_pagination_has_more(client, add_mock_response, httpx_mock):
+    """A full page triggers a count query, so has_more reflects the true total."""
+    mcp.test_client = client
+    add_mock_response(
+        httpx_mock,
+        mockname="schemas.json",
+        method="GET",
+        url="http://localhost:8000/api/schema?branch=main",
+        is_reusable=True,
+    )
+    add_mock_response(
+        httpx_mock,
+        mockname="physical_devices.json",
+        method="POST",
+        url="http://localhost:8000/graphql/main",
+        is_reusable=True,
+    )
+    try:
+        async with Client(mcp) as client_session:
+            result = await client_session.call_tool("get_nodes", {"kind": "DcimPhysicalDevice", "limit": 12})
+            data = _unwrap(result)
+            assert data["count"] == 12
+            assert data["limit"] == 12
+            # The mock returns count=12 for every query, so the page is exactly the total.
+            assert data["total_count"] == 12
+            assert data["has_more"] is False
+    finally:
+        mcp.test_client = None
+
+
+@pytest.mark.asyncio
+async def test_search_nodes(client, add_mock_response, httpx_mock):
+    mcp.test_client = client
+    add_mock_response(
+        httpx_mock,
+        mockname="schemas.json",
+        method="GET",
+        url="http://localhost:8000/api/schema?branch=main",
+        is_reusable=True,
+    )
+    add_mock_response(
+        httpx_mock,
+        mockname="device.json",
+        method="POST",
+        url="http://localhost:8000/graphql/main",
+        is_reusable=True,
+    )
+    try:
+        async with Client(mcp) as client_session:
+            result = await client_session.call_tool("search_nodes", {"query": "leaf", "kind": "DcimPhysicalDevice"})
+            data = _unwrap(result)
+            assert data["limit"] == 10
+            assert data["count"] >= 1
+            assert all(isinstance(n, str) for n in data["nodes"])
     finally:
         mcp.test_client = None

@@ -6,7 +6,7 @@ from fastmcp import Context, FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field, field_validator
 
-from franc.utils import MCPResponse, MCPToolStatus, _log_and_return_error, require_client
+from franc.utils import MCPResponse, MCPToolStatus, _gather_safe, _log_and_return_error, require_client
 
 if TYPE_CHECKING:
     from infrahub_sdk import InfrahubClient
@@ -18,20 +18,16 @@ mcp: FastMCP = FastMCP(name="Infrahub DataCenter Deployment")
 
 TOPOLOGY_DC_KIND = "TopologyDataCenter"
 TOPOLOGY_DC_DESIGN_KIND = "TopologyDataCenterDesign"
-DEFAULT_STRATEGIES = ["ebgp-evpn", "isis-ibgp", "ospf-ibgp", "ebgp-ibgp"]
+DEFAULT_STRATEGIES = ["ebgp-ebgp", "ebgp-ibgp", "ospf-ibgp"]
 DEFAULT_DESIGNS = [
-    "S-Standard",
-    "S-Hierarchical",
-    "S-Flat",
-    "M-Standard",
-    "M-Hierarchical",
-    "M-Flat",
-    "L-Standard",
-    "L-Hierarchical",
-    "L-Flat",
-    "XL-Standard",
-    "XL-Hierarchical",
-    "XL-Flat",
+    "S_OSPF_IBGP",
+    "S_EBGP_IBGP",
+    "S_EBGP_EBGP",
+    "M_OSPF_IBGP",
+    "M_EBGP_EBGP",
+    "M_EBGP_IBGP",
+    "L_EBGP_EBGP",
+    "XL_EBGP_EBGP",
 ]
 DEFAULT_PROVIDERS = ["Technology Partner", "Customer 1"]
 
@@ -122,15 +118,16 @@ async def _resolve_design_pattern_id(client: Any, design_name: str, branch: str 
 
 
 async def _strategy_choices(client: Any, branch: str | None) -> list[str]:
+    # routing_strategy lives on TopologyDataCenterDesign, not on TopologyDataCenter itself.
     schema_api = getattr(client, "schema", None)
     if not schema_api:
         return []
     try:
-        schema_result = schema_api.get(kind=TOPOLOGY_DC_KIND, branch=branch)
+        schema_result = schema_api.get(kind=TOPOLOGY_DC_DESIGN_KIND, branch=branch)
         schema = await schema_result if inspect.isawaitable(schema_result) else schema_result
     except Exception:  # noqa: BLE001
         return []
-    return _get_choice_names(schema, "strategy")
+    return _get_choice_names(schema, "routing_strategy")
 
 
 async def _design_choices(client: Any, branch: str | None) -> list[str]:
@@ -170,10 +167,10 @@ async def discover_datacenter_options(
 ) -> MCPResponse[dict[str, Any]]:
     """
     Discover current selectable options for Data Center deployment:
-      - Existing metro locations (LocationBuilding)
-      - Existing design patterns (TopologyDataCenter design field values)
-      - Available strategies (static list plus discovered)
-      - Available providers (static + discovered)
+      - Existing metro locations (LocationMetro / LocationBuilding)
+      - Existing design patterns (TopologyDataCenterDesign nodes)
+      - Available strategies (TopologyDataCenterDesign.routing_strategy choices)
+      - Available providers (static list; TopologyDataCenter has no provider attribute)
     Returns:
       {
         "locations": [...],
@@ -189,80 +186,40 @@ async def discover_datacenter_options(
             ctx=ctx, error=str(exc), remediation="Start the MCP with a configured client."
         )
 
+    # Fire all discovery queries in parallel — schema + nodes for designs, locations
+    design_schema_coro = client.schema.get(kind=TOPOLOGY_DC_DESIGN_KIND, branch=branch)
+    loc_b_coro = client.all(kind="LocationBuilding", branch=branch)
+    loc_m_coro = client.all(kind="LocationMetro", branch=branch)
+
+    design_schema, loc_b, loc_m = await _gather_safe(design_schema_coro, loc_b_coro, loc_m_coro)
+
+    # Design nodes (depends on design_schema)
+    design_nodes: list[Any] = []
+    if design_schema is not None:
+        (design_nodes_raw,) = await _gather_safe(client.all(kind=design_schema.kind, branch=branch))
+        design_nodes = design_nodes_raw or []
+
     locations: set[str] = set()
     designs: set[str] = set()
     strategies: set[str] = set()
     providers: set[str] = set()
 
-    # Strategy options from schema if available
-    strategy_choices = await _strategy_choices(client, branch)
-    if strategy_choices:
-        strategies.update(strategy_choices)
+    # Strategies from the design schema's routing_strategy choices
+    strategies.update(_get_choice_names(design_schema, "routing_strategy"))
 
-    # Discover design patterns via schema + existing nodes
-    try:
-        design_schema_result = client.schema.get(kind=TOPOLOGY_DC_DESIGN_KIND, branch=branch)
-        design_schema = (
-            await design_schema_result if inspect.isawaitable(design_schema_result) else design_schema_result
-        )
-        design_nodes_result = client.all(kind=design_schema.kind, branch=branch)
-        design_nodes = await design_nodes_result if inspect.isawaitable(design_nodes_result) else design_nodes_result
-        for node in design_nodes:
-            label = getattr(node, "display_label", None) or getattr(node, "name", None)
-            if label:
-                designs.add(str(label))
-    except Exception:  # noqa: BLE001, S110
-        pass
+    # Designs from design nodes
+    for node in design_nodes:
+        label = getattr(node, "display_label", None) or getattr(node, "name", None)
+        if label:
+            designs.add(str(label.value) if hasattr(label, "value") else str(label))
 
-    # Attempt to discover LocationBuilding objects (schema kind may vary across deployments).
-    # We best-effort attempt several likely kinds.
-    possible_location_kinds = ["LocationBuilding", "BuiltinLocationBuilding", "LocationHosting"]
-    for lk in possible_location_kinds:
-        try:
-            schema_result = client.schema.get(kind=lk, branch=branch)
-            schema = await schema_result if inspect.isawaitable(schema_result) else schema_result
-        except Exception:  # noqa: BLE001, S112
-            continue
-        try:
-            loc_nodes_result = client.all(kind=schema.kind, branch=branch)
-            loc_nodes = await loc_nodes_result if inspect.isawaitable(loc_nodes_result) else loc_nodes_result
-            for node in loc_nodes:
-                # Prefer display_label or name attribute
-                label = getattr(node, "display_label", None) or getattr(node, "name", None)
-                if label:
-                    locations.add(str(label))
-        except Exception:  # noqa: BLE001, S110
-            pass
+    # Locations from both location kinds
+    for node in (loc_b or []) + (loc_m or []):
+        label = getattr(node, "display_label", None) or getattr(node, "name", None)
+        if label:
+            locations.add(str(label.value) if hasattr(label, "value") else str(label))
 
-    # Discover existing TopologyDataCenter designs / strategies / providers
-    topology_kinds = ["TopologyDataCenter"]
-    for tk in topology_kinds:
-        try:
-            schema_result = client.schema.get(kind=tk, branch=branch)
-            schema = await schema_result if inspect.isawaitable(schema_result) else schema_result
-        except Exception:  # noqa: BLE001, S112
-            continue
-        try:
-            topo_nodes_result = client.all(kind=schema.kind, branch=branch)
-            topo_nodes = await topo_nodes_result if inspect.isawaitable(topo_nodes_result) else topo_nodes_result
-            for node in topo_nodes:
-                # Access attributes safely
-                for attr_name in ["design", "strategy", "provider", "location"]:
-                    val = getattr(node, attr_name, None)
-                    if val and getattr(val, "value", None) is not None:
-                        raw = str(val.value)
-                        if attr_name == "design":
-                            designs.add(raw)
-                        elif attr_name == "strategy":
-                            strategies.add(raw)
-                        elif attr_name == "provider":
-                            providers.add(raw)
-                        elif attr_name == "location" and raw:
-                            locations.add(raw)
-        except Exception:  # noqa: BLE001, S110
-            pass
-
-    # Provide baseline static options if discovery empty
+    # Static fallbacks if discovery returned nothing
     if not strategies:
         strategies.update(DEFAULT_STRATEGIES)
     if not providers:
@@ -270,14 +227,15 @@ async def discover_datacenter_options(
     if not designs:
         designs.update(DEFAULT_DESIGNS)
 
-    data = {
-        "locations": sorted(locations),
-        "designs": sorted(designs),
-        "strategies": sorted(strategies),
-        "providers": sorted(providers),
-    }
-
-    return MCPResponse(status=MCPToolStatus.SUCCESS, data=data)
+    return MCPResponse(
+        status=MCPToolStatus.SUCCESS,
+        data={
+            "locations": sorted(locations),
+            "designs": sorted(designs),
+            "strategies": sorted(strategies),
+            "providers": sorted(providers),
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -401,16 +359,14 @@ async def create_datacenter_deployment(
 
     topology_data = {
         "name": params.site_name,
-        "strategy": params.strategy,
         "status": "provisioning",
         "fully_managed": True,
-        "underlay": False,
         "amount_of_super_spines": amount_of_super_spines,
         "fabric_interface_sorting_method": fabric_sort,
         "spine_interface_sorting_method": spine_sort,
     }
     if design_pattern_id:
-        topology_data["design_pattern"] = {"id": design_pattern_id}
+        topology_data["design"] = {"id": design_pattern_id}
 
     # Attempt object creation
     created_node_summary: dict[str, Any] = {}
@@ -435,7 +391,6 @@ async def create_datacenter_deployment(
                 "design_pattern_id": design_pattern_id,
                 "strategy": params.strategy,
                 "fully_managed": True,
-                "underlay": False,
             }
         else:
             # Fallback: Provide GraphQL mutation template (manual execution path)
@@ -445,10 +400,8 @@ mutation CreateTopologyDataCenter {{
     branch: "{branch_name}",
     data: {{
       name: "{params.site_name}",
-      strategy: "{params.strategy}",
             status: "provisioning",
             fully_managed: true,
-            underlay: false,
             amount_of_super_spines: {amount_of_super_spines},
             fabric_interface_sorting_method: "{fabric_sort}",
             spine_interface_sorting_method: "{spine_sort}"
@@ -542,10 +495,8 @@ async def validate_datacenter_deployment(
     summary: dict[str, Any] = {}
     for attr in [
         "name",
-        "strategy",
         "status",
         "fully_managed",
-        "underlay",
         "amount_of_super_spines",
         "fabric_interface_sorting_method",
         "spine_interface_sorting_method",
@@ -554,12 +505,12 @@ async def validate_datacenter_deployment(
         if a and getattr(a, "value", None) is not None:
             summary[attr] = str(a.value)
 
-    design_pattern = getattr(node, "design_pattern", None)
-    if design_pattern:
-        peer = getattr(design_pattern, "peer", None)
+    design = getattr(node, "design", None)
+    if design:
+        peer = getattr(design, "peer", None)
         label = getattr(peer, "display_label", None) or getattr(peer, "name", None)
         if label:
-            summary["design_pattern"] = str(label)
+            summary["design"] = str(label)
 
     summary["id"] = getattr(node, "id", None)
 

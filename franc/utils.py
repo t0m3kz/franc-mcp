@@ -1,11 +1,15 @@
+import asyncio
+import hashlib
 import json
+from contextvars import ContextVar
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
+import gcf
 import tiktoken
-import toons
 from fastmcp import Context
+from infrahub_sdk import Config, InfrahubClient
 from infrahub_sdk.node import Attribute, InfrahubNode, RelatedNode, RelationshipManager
 from pydantic import BaseModel
 
@@ -23,6 +27,13 @@ _SCHEMA_DICT_CACHE: dict[tuple[str | None, str], dict[str, Any]] = {}
 # Mapping cache: branch -> {kind: label}
 _SCHEMA_MAPPING_CACHE: dict[str | None, dict[str, str]] = {}
 
+# Caller's Infrahub token for the current tool call (set by TokenPassthroughMiddleware; None = shared token)
+request_token: ContextVar[str | None] = ContextVar("franc_request_token", default=None)
+
+# Per-token clients, keyed by token digest so raw tokens are never dict keys; oldest evicted first
+_TOKEN_CLIENTS: dict[str, InfrahubClient] = {}
+_TOKEN_CLIENTS_MAX = 64
+
 
 T = TypeVar("T")
 
@@ -37,10 +48,6 @@ class MCPResponse(BaseModel, Generic[T]):
     data: T | None = None
     error: str | None = None
     remediation: str | None = None
-
-
-if TYPE_CHECKING:
-    from infrahub_sdk import InfrahubClient
 
 
 def get_prompt(name: str) -> str:
@@ -107,7 +114,20 @@ def require_client(ctx: Context) -> "InfrahubClient":
     client = getattr(lifespan_ctx, "client", None)
     if client is None:
         raise RuntimeError("lifespan_context.client missing; Infrahub client unavailable.")
+    if token := request_token.get():
+        return _client_for_token(client, token)
     return client
+
+
+def _client_for_token(base: InfrahubClient, token: str) -> InfrahubClient:
+    """Client that authenticates as the caller (token passthrough), reusing the shared client's address."""
+    key = hashlib.sha256(token.encode()).hexdigest()
+    cached = _TOKEN_CLIENTS.get(key)
+    if cached is None:
+        if len(_TOKEN_CLIENTS) >= _TOKEN_CLIENTS_MAX:
+            _TOKEN_CLIENTS.pop(next(iter(_TOKEN_CLIENTS)))
+        cached = _TOKEN_CLIENTS[key] = InfrahubClient(address=base.address, config=Config(api_token=token))
+    return cached
 
 
 async def convert_node_to_dict(*, obj: InfrahubNode, branch: str | None, include_id: bool = True) -> dict[str, Any]:
@@ -165,53 +185,68 @@ async def convert_node_to_dict(*, obj: InfrahubNode, branch: str | None, include
     return data
 
 
-def encode_with_toon(data: Any) -> str:
+def encode_with_gcf(data: Any) -> str:
     """
-    Encode data using toon format for token-efficient transmission.
+    Encode data using the GCF (Graph Compact Format) generic profile for
+    token-efficient transmission.
 
     Args:
         data: Python object to encode
 
     Returns:
-        TOON-formatted string
+        GCF-formatted string
     """
-    return toons.dumps(data)  # type: ignore[attr-defined]
+    return gcf.encode_generic(data)
 
 
-def decode_from_toon(encoded: str) -> Any:
+def decode_from_gcf(encoded: str) -> Any:
     """
-    Decode data from toon format back to Python objects.
+    Decode data from GCF format back to Python objects.
 
     Args:
-        encoded: TOON-formatted string
+        encoded: GCF-formatted string
 
     Returns:
         Decoded Python object
     """
-    return toons.loads(encoded)  # type: ignore[attr-defined]
+    return gcf.decode_generic(encoded)
+
+
+def _gcf_round_trips(data: Any, encoded: str) -> bool:
+    """Verify encode->decode reproduces the original data before trusting the encoding."""
+    try:
+        return gcf.decode_generic(encoded) == data
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def estimate_token_savings(data: Any) -> tuple[dict[str, Any], str]:
     """
-    Calculate token savings from TOON vs JSON and return the encoded TOON string.
+    Calculate token savings from GCF vs JSON and return the encoded GCF string.
+
+    Falls back to the JSON string itself (0% savings) if the GCF encoding does not
+    round-trip cleanly for this data shape — callers always get something decodable.
 
     Returns:
-        (stats_dict, toon_str) — stats has json_tokens, toon_tokens, savings_percent;
-        toon_str is reusable so callers avoid a second toons.dumps() call.
+        (stats_dict, encoded_str) — stats has json_tokens, gcf_tokens, savings_percent;
+        encoded_str is reusable so callers avoid a second encode_generic() call.
     """
     json_str = json.dumps(data)
-    toon_str = toons.dumps(data)  # type: ignore[attr-defined]
+    gcf_str = gcf.encode_generic(data)
+
+    if not _gcf_round_trips(data, gcf_str):
+        gcf_str = json_str
 
     json_tokens = len(_TIKTOKEN_ENCODER.encode(json_str))
-    toon_tokens = len(_TIKTOKEN_ENCODER.encode(toon_str))
-    savings = ((json_tokens - toon_tokens) / json_tokens * 100) if json_tokens > 0 else 0
+    gcf_tokens = len(_TIKTOKEN_ENCODER.encode(gcf_str))
+    savings = ((json_tokens - gcf_tokens) / json_tokens * 100) if json_tokens > 0 else 0
 
     stats = {
         "json_tokens": json_tokens,
-        "toon_tokens": toon_tokens,
+        "gcf_tokens": gcf_tokens,
         "savings_percent": round(savings, 1),
     }
-    return stats, toon_str
+    return stats, gcf_str
 
 
 def get_cached_schema(branch: str | None, kind: str) -> Any | None:
@@ -251,28 +286,75 @@ def clear_schema_cache() -> None:
     _SCHEMA_MAPPING_CACHE.clear()
 
 
+def attr_val(node: Any, name: str, default: Any = None) -> Any:
+    """Extract .value from an Infrahub SDK attribute, falling back to str() or default.
+
+    Replaces the 5-line getattr/hasattr/value dance repeated across every tool.
+    For RelatedNode relationships, returns display_label → id (no fetch needed).
+    """
+    attr = getattr(node, name, None)
+    if attr is None:
+        return default
+    # Cardinality-one relationship: return display label or id without fetching
+    if isinstance(attr, RelatedNode):
+        label = getattr(attr, "_display_label", None)
+        if label:
+            return label
+        rid = getattr(attr, "_id", None)
+        return rid if rid else default
+    if hasattr(attr, "value"):
+        return attr.value if attr.value is not None else default
+    return str(attr) if attr else default
+
+
+def slim_node(node: Any, fields: list[str]) -> dict[str, Any]:
+    """Extract only the requested fields from an Infrahub node as a flat dict.
+
+    Avoids full convert_node_to_dict when only a few fields are needed,
+    which saves tokens and avoids unnecessary relationship fetches.
+    """
+    return {f: attr_val(node, f) for f in fields}
+
+
+async def _gather_safe(*coros: Any) -> list[Any]:
+    """Run coroutines concurrently; replace exceptions with None instead of raising.
+
+    Use for parallel Infrahub queries where partial failure is acceptable
+    (e.g. discovering options where some schema kinds may not exist).
+    """
+    results = await asyncio.gather(*coros, return_exceptions=True)
+    return [None if isinstance(r, BaseException) else r for r in results]
+
+
 async def maybe_compress(
     ctx: Context,
     data: Any,
     kind_label: str,
     data_key: str,
 ) -> "MCPResponse | None":
-    """Return a compressed MCPResponse if data exceeds the auto-compress threshold, else None.
+    """Return a compressed MCPResponse only if GCF is a genuine, token-saving candidate; else None.
+
+    Candidates over policy: GCF and JSON are both measured in tokens, and GCF is used only
+    when it actually wins. If the GCF encoding doesn't round-trip cleanly for this data shape,
+    compression is skipped entirely — no undecodable payload is ever shipped under a `*_gcf` key.
 
     Callers should do:
         return await maybe_compress(...) or MCPResponse(status=SUCCESS, data=data)
     """
-    from franc.constants import TOON_AUTO_THRESHOLD_ITEMS  # avoid circular at import time
+    from franc.constants import GCF_AUTO_THRESHOLD_ITEMS  # avoid circular at import time
 
-    if len(data) <= TOON_AUTO_THRESHOLD_ITEMS:
+    if len(data) <= GCF_AUTO_THRESHOLD_ITEMS:
         return None
 
-    stats, toon_str = estimate_token_savings(data)
+    stats, gcf_str = estimate_token_savings(data)
+    if stats["gcf_tokens"] >= stats["json_tokens"] or not _gcf_round_trips(data, gcf_str):
+        return None
+
     await ctx.info(
-        f"Auto-compressing {len(data)} {kind_label} with TOON "
-        f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['toon_tokens']} tokens)"
+        f"Auto-compressing {len(data)} {kind_label} with GCF "
+        f"(saving {stats['savings_percent']}%, {stats['json_tokens'] - stats['gcf_tokens']} tokens)"
     )
     return MCPResponse(
         status=MCPToolStatus.SUCCESS,
-        data={data_key: toon_str, "count": len(data)},
+        data={data_key: gcf_str, "count": len(data)},
     )

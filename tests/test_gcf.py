@@ -1,12 +1,12 @@
-"""Tests for toon compression tools."""
+"""Tests for GCF (Graph Compact Format) compression tools."""
 
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastmcp import Context
 
-from franc.tools.toon import toon_analyze, toon_decode, toon_encode
-from franc.utils import MCPToolStatus
+from franc.tools.gcf import gcf_analyze, gcf_decode, gcf_encode
+from franc.utils import MCPToolStatus, decode_from_gcf, maybe_compress
 
 
 @pytest.fixture
@@ -20,25 +20,25 @@ def mock_context():
 
 
 @pytest.mark.asyncio
-async def test_toon_encode_simple_dict(mock_context: Context):
+async def test_gcf_encode_simple_dict(mock_context: Context):
     """Test encoding a simple dictionary."""
     data = {"name": "device1", "ip": "10.0.0.1", "status": "active"}
 
-    result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
+    result = await gcf_encode(ctx=mock_context, data=data, show_stats=True)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
-    assert "toon_encoded" in result.data
+    assert "gcf_encoded" in result.data
     assert "statistics" in result.data
     assert result.data["statistics"]["savings_percent"] >= 0
 
 
 @pytest.mark.asyncio
-async def test_toon_encode_list_of_dicts(mock_context: Context):
+async def test_gcf_encode_list_of_dicts(mock_context: Context):
     """Test encoding a list of similar dictionaries (best compression)."""
     data = [{"name": f"device{i}", "ip": f"10.0.0.{i}", "status": "active"} for i in range(10)]
 
-    result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
+    result = await gcf_encode(ctx=mock_context, data=data, show_stats=True)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
@@ -46,28 +46,28 @@ async def test_toon_encode_list_of_dicts(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_encode_without_stats(mock_context: Context):
+async def test_gcf_encode_without_stats(mock_context: Context):
     """Test encoding without statistics."""
     data = {"test": "data"}
 
-    result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
+    result = await gcf_encode(ctx=mock_context, data=data, show_stats=False)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
-    assert "toon_encoded" in result.data
+    assert "gcf_encoded" in result.data
     assert "statistics" not in result.data
 
 
 @pytest.mark.asyncio
-async def test_toon_decode_simple(mock_context: Context):
-    """Test decoding toon-encoded data."""
+async def test_gcf_decode_simple(mock_context: Context):
+    """Test decoding GCF-encoded data."""
     original_data = {"name": "test", "value": 42}
 
-    encode_result = await toon_encode(ctx=mock_context, data=original_data, show_stats=False)
+    encode_result = await gcf_encode(ctx=mock_context, data=original_data, show_stats=False)
     assert encode_result.data is not None
-    toon_string = encode_result.data["toon_encoded"]
+    gcf_string = encode_result.data["gcf_encoded"]
 
-    decode_result = await toon_decode(ctx=mock_context, toon_string=toon_string)
+    decode_result = await gcf_decode(ctx=mock_context, gcf_string=gcf_string)
 
     assert decode_result.status == MCPToolStatus.SUCCESS
     assert decode_result.data is not None
@@ -75,7 +75,7 @@ async def test_toon_decode_simple(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_roundtrip_complex_data(mock_context: Context):
+async def test_gcf_roundtrip_complex_data(mock_context: Context):
     """Test encode/decode roundtrip with complex nested data."""
     original_data = {
         "datacenters": [
@@ -100,10 +100,10 @@ async def test_toon_roundtrip_complex_data(mock_context: Context):
         "threshold": 0.95,
     }
 
-    encode_result = await toon_encode(ctx=mock_context, data=original_data, show_stats=False)
+    encode_result = await gcf_encode(ctx=mock_context, data=original_data, show_stats=False)
     assert encode_result.data is not None
 
-    decode_result = await toon_decode(ctx=mock_context, toon_string=encode_result.data["toon_encoded"])
+    decode_result = await gcf_decode(ctx=mock_context, gcf_string=encode_result.data["gcf_encoded"])
 
     assert decode_result.status == MCPToolStatus.SUCCESS
     assert decode_result.data is not None
@@ -111,11 +111,37 @@ async def test_toon_roundtrip_complex_data(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_analyze_small_data(mock_context: Context):
+async def test_gcf_roundtrip_list_of_hop_lists(mock_context: Context):
+    """Regression test: list[list[dict]] (e.g. find_physical_path's `paths`) must survive round-trip.
+
+    This exact shape was silently mis-encoded/undecodable with the previous TOON-based encoder.
+    """
+    original_data = [
+        [
+            {"src_device": "a", "src_iface": "e1", "connector_type": "cable", "dst_iface": "e2", "dst_device": "b"},
+            {"src_device": "b", "src_iface": "e3", "connector_type": "cable", "dst_iface": "e4", "dst_device": "c"},
+        ],
+        [
+            {"src_device": "a", "src_iface": "e5", "connector_type": "cable", "dst_iface": "e6", "dst_device": "d"},
+        ],
+    ] * 3  # 6 paths — matches the >5 auto-compress threshold
+
+    encode_result = await gcf_encode(ctx=mock_context, data=original_data, show_stats=False)
+    assert encode_result.data is not None
+
+    decode_result = await gcf_decode(ctx=mock_context, gcf_string=encode_result.data["gcf_encoded"])
+
+    assert decode_result.status == MCPToolStatus.SUCCESS
+    assert decode_result.data is not None
+    assert decode_result.data["decoded"] == original_data
+
+
+@pytest.mark.asyncio
+async def test_gcf_analyze_small_data(mock_context: Context):
     """Test analyzing small data structure."""
     data = {"key": "value"}
 
-    result = await toon_analyze(ctx=mock_context, data=data)
+    result = await gcf_analyze(ctx=mock_context, data=data)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
@@ -124,11 +150,11 @@ async def test_toon_analyze_small_data(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_analyze_large_repetitive_data(mock_context: Context):
+async def test_gcf_analyze_large_repetitive_data(mock_context: Context):
     """Test analyzing large repetitive data (should show good savings)."""
     data = [{"device_name": f"switch-{i}", "ip_address": f"192.168.1.{i}", "status": "operational"} for i in range(100)]
 
-    result = await toon_analyze(ctx=mock_context, data=data)
+    result = await gcf_analyze(ctx=mock_context, data=data)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
@@ -140,24 +166,27 @@ async def test_toon_analyze_large_repetitive_data(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_encode_primitives(mock_context: Context):
+async def test_gcf_encode_primitives(mock_context: Context):
     """Test encoding various primitive types."""
     test_cases = [42, 3.14, "test string", True, None, [1, 2, 3], ["a", "b", "c"]]
 
     for data in test_cases:
-        result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
+        result = await gcf_encode(ctx=mock_context, data=data, show_stats=False)
         assert result.status == MCPToolStatus.SUCCESS
         assert result.data is not None
 
-        decode_result = await toon_decode(ctx=mock_context, toon_string=result.data["toon_encoded"])
+        decode_result = await gcf_decode(ctx=mock_context, gcf_string=result.data["gcf_encoded"])
         assert decode_result.data is not None
         assert decode_result.data["decoded"] == data
 
 
 @pytest.mark.asyncio
-async def test_toon_decode_valid_toon(mock_context: Context):
-    """Test decoding a valid TOON string."""
-    result = await toon_decode(ctx=mock_context, toon_string="name: Alice\nage: 30")
+async def test_gcf_decode_valid_gcf(mock_context: Context):
+    """Test decoding a valid GCF string."""
+    encode_result = await gcf_encode(ctx=mock_context, data={"name": "Alice", "age": 30}, show_stats=False)
+    assert encode_result.data is not None
+
+    result = await gcf_decode(ctx=mock_context, gcf_string=encode_result.data["gcf_encoded"])
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
@@ -165,7 +194,7 @@ async def test_toon_decode_valid_toon(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_encode_realistic_infrahub_data(mock_context: Context):
+async def test_gcf_encode_realistic_infrahub_data(mock_context: Context):
     """Test encoding data structure similar to Infrahub query results."""
     data = {
         "nodes": [
@@ -184,7 +213,7 @@ async def test_toon_encode_realistic_infrahub_data(mock_context: Context):
         "count": 50,
     }
 
-    result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
+    result = await gcf_encode(ctx=mock_context, data=data, show_stats=True)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
@@ -192,27 +221,26 @@ async def test_toon_encode_realistic_infrahub_data(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_statistics_accuracy(mock_context: Context):
+async def test_gcf_statistics_accuracy(mock_context: Context):
     """Test that statistics accurately reflect compression."""
     data = {"a" * 100: "b" * 100}
 
-    result = await toon_encode(ctx=mock_context, data=data, show_stats=True)
+    result = await gcf_encode(ctx=mock_context, data=data, show_stats=True)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
     stats = result.data["statistics"]
 
-    expected_savings = ((stats["json_tokens"] - stats["toon_tokens"]) / stats["json_tokens"]) * 100
+    expected_savings = ((stats["json_tokens"] - stats["gcf_tokens"]) / stats["json_tokens"]) * 100
     assert abs(stats["savings_percent"] - expected_savings) < 0.1
-    assert stats["json_tokens"] - stats["toon_tokens"] > 0
 
 
 @pytest.mark.asyncio
-async def test_toon_analyze_recommendation_low_savings(mock_context: Context):
+async def test_gcf_analyze_recommendation_low_savings(mock_context: Context):
     """Test recommendation for low savings data."""
     data = {"x": 1}
 
-    result = await toon_analyze(ctx=mock_context, data=data)
+    result = await gcf_analyze(ctx=mock_context, data=data)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
@@ -224,17 +252,17 @@ async def test_toon_analyze_recommendation_low_savings(mock_context: Context):
 
 
 @pytest.mark.asyncio
-async def test_toon_encode_empty_structures(mock_context: Context):
+async def test_gcf_encode_empty_structures(mock_context: Context):
     """Test encoding empty data structures."""
     test_cases: list = [{}, [], ""]
 
     for data in test_cases:
-        result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
+        result = await gcf_encode(ctx=mock_context, data=data, show_stats=False)
         assert result.status == MCPToolStatus.SUCCESS
 
 
 @pytest.mark.asyncio
-async def test_toon_encode_mixed_types(mock_context: Context):
+async def test_gcf_encode_mixed_types(mock_context: Context):
     """Test encoding mixed nested types."""
     data = {
         "string": "text",
@@ -246,11 +274,56 @@ async def test_toon_encode_mixed_types(mock_context: Context):
         "nested": {"deep": {"value": [1, 2, 3]}},
     }
 
-    result = await toon_encode(ctx=mock_context, data=data, show_stats=False)
+    result = await gcf_encode(ctx=mock_context, data=data, show_stats=False)
 
     assert result.status == MCPToolStatus.SUCCESS
     assert result.data is not None
 
-    decode_result = await toon_decode(ctx=mock_context, toon_string=result.data["toon_encoded"])
+    decode_result = await gcf_decode(ctx=mock_context, gcf_string=result.data["gcf_encoded"])
     assert decode_result.data is not None
     assert decode_result.data["decoded"] == data
+
+
+@pytest.mark.asyncio
+async def test_maybe_compress_skips_when_gcf_loses_to_json(mock_context: Context):
+    """maybe_compress must not compress when GCF's token count isn't smaller than JSON's.
+
+    A minimal payload just above the auto-compress threshold has too little redundancy for
+    GCF's `GCF profile=generic\n## [N]: ...` header/format overhead to pay off — candidates
+    over policy: measure both, only use GCF when it actually wins.
+    """
+    data = [True, False, True, False, True, False]
+
+    result = await maybe_compress(mock_context, data, "devices", "devices_gcf")
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_maybe_compress_compresses_when_gcf_wins(mock_context: Context):
+    """maybe_compress must compress when GCF genuinely reduces tokens vs JSON."""
+    data = [
+        {"name": f"leaf-{i:02d}", "role": "leaf", "platform": "cisco_ios", "status": "active"} for i in range(1, 13)
+    ]
+
+    result = await maybe_compress(mock_context, data, "devices", "devices_gcf")
+
+    assert result is not None
+    assert result.status == MCPToolStatus.SUCCESS
+    assert result.data is not None
+    assert "devices_gcf" in result.data
+    assert result.data["count"] == len(data)
+    assert decode_from_gcf(result.data["devices_gcf"]) == data
+
+
+@pytest.mark.asyncio
+async def test_maybe_compress_fail_open_on_bad_round_trip(mock_context: Context):
+    """maybe_compress must skip compression (return None) rather than ship an undecodable payload.
+
+    NaN survives json.dumps but breaks GCF's decode round-trip check.
+    """
+    data = [{"name": f"device-{i}", "value": float("nan")} for i in range(1, 13)]
+
+    result = await maybe_compress(mock_context, data, "devices", "devices_gcf")
+
+    assert result is None

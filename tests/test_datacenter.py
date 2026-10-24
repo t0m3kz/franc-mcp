@@ -41,8 +41,8 @@ async def test_create_datacenter_deployment():
     params = {
         "site_name": "DC-BER-1",
         "metro_location": "BERLIN",
-        "design": "M-Standard",
-        "strategy": "ebgp-evpn",
+        "design": "M_EBGP_EBGP",
+        "strategy": "ebgp-ebgp",
         "provider": "Internal",
     }
 
